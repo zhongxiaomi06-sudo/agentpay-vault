@@ -4,6 +4,7 @@
 > **x402/MPP 教 agent 怎么开口谈钱（HTTP 授权层），AgentPay Vault 是钱在 Monad 链上的账本和保险柜（结算状态机）。**
 
 - **线上 Demo**: https://nextjs-peach-nine-16.vercel.app （`/lens` 为并行执行可视化彩蛋页）
+- **国内直连镜像**: http://112.124.3.17/agentpay （vercel.app 在大陆网络不可达时的备用入口）
 - **链**: Monad Testnet (Chain ID 10143)
 
 | 合约 | 地址 |
