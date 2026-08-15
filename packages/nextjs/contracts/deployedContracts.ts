@@ -7,12 +7,25 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   10143: {
     AgentPayVault: {
-      address: "0x9f05a103a1d4c515c9be1c468fd1f8cc0090a5b6",
+      address: "0x1236c35d325314890f6ab14a549bf057ac01931a",
       abi: [
         {
           inputs: [],
           stateMutability: "nonpayable",
           type: "constructor",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+          ],
+          name: "EscrowClaimed",
+          type: "event",
         },
         {
           anonymous: false,
@@ -29,8 +42,39 @@ const deployedContracts = {
               name: "boundHash",
               type: "bytes32",
             },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "challengeDeadline",
+              type: "uint256",
+            },
           ],
           name: "EscrowDelivered",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "toPayer",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "toPayee",
+              type: "uint256",
+            },
+          ],
+          name: "EscrowDisputed",
           type: "event",
         },
         {
@@ -373,6 +417,19 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
+          name: "claim",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+          ],
           name: "closeStream",
           outputs: [],
           stateMutability: "nonpayable",
@@ -447,6 +504,19 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
+          name: "dispute",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+          ],
           name: "earned",
           outputs: [
             {
@@ -498,12 +568,27 @@ const deployedContracts = {
             },
             {
               internalType: "bytes32",
+              name: "expectedHash",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
               name: "deliveryHash",
               type: "bytes32",
             },
             {
               internalType: "uint256",
               name: "deadline",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "challengeDeadline",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "challengePeriod",
               type: "uint256",
             },
             {
@@ -535,6 +620,11 @@ const deployedContracts = {
             {
               internalType: "uint256",
               name: "timeoutSecs",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "challengeSecs",
               type: "uint256",
             },
             {
@@ -892,7 +982,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 53843924,
+      deployedOnBlock: 53866859,
     },
     ChannelVault: {
       address: "0x36b45aea8267b0efb232a3a2515240a5c5178523",

@@ -56,28 +56,34 @@ contract AgentPayVault {
     event Metered(uint256 indexed planId, address indexed agent, uint256 callIndex, uint256 fee);
     event ProviderWithdrawn(address indexed provider, uint256 amount);
 
-    // ---------- 3. Escrow ----------
+    // ---------- 3. Escrow（乐观托管：先放款、争议惩罚） ----------
     enum EscrowStatus {
         Locked,
         Delivered,
         Released,
-        Refunded
+        Refunded,
+        Disputed
     }
     struct Escrow {
         address payer;
         address payee;
         uint256 amount;
+        bytes32 expectedHash; // 期望交付物哈希（agent 链下比对后 release）
         bytes32 deliveryHash; // 绑定上下文的交付凭证 keccak256(id, payee, resultHash)
-        uint256 deadline;
+        uint256 deadline; // 交付截止（超时未交付可退款）
+        uint256 challengeDeadline; // 争议窗口（交付后开启）
+        uint256 challengePeriod; // 争议窗口时长
         EscrowStatus status;
-        address arbiter; // 仲裁 hook（争议裁决为 roadmap 项）
+        address arbiter; // 仲裁 hook（争议裁决为 roadmap 项；当前 dispute = 50/50 谢林点）
     }
     uint256 public escrowCount;
     mapping(uint256 => Escrow) public escrows;
 
     event EscrowLocked(uint256 indexed id, address indexed payer, address indexed payee, uint256 amount);
-    event EscrowDelivered(uint256 indexed id, bytes32 boundHash);
+    event EscrowDelivered(uint256 indexed id, bytes32 boundHash, uint256 challengeDeadline);
     event EscrowReleased(uint256 indexed id);
+    event EscrowClaimed(uint256 indexed id); // 窗口期无争议，服务商乐观取款
+    event EscrowDisputed(uint256 indexed id, uint256 toPayer, uint256 toPayee); // 50/50 强制 split
     event EscrowRefunded(uint256 indexed id);
 
     constructor() {
@@ -231,13 +237,15 @@ contract AgentPayVault {
         require(ok, "AgentPay: transfer failed");
     }
 
-    // ================= Escrow =================
+    // ================= Escrow（乐观托管：先放款、争议惩罚） =================
+    // 博弈覆盖：买方装死→claim 堵死；交垃圾→dispute 可信威胁；跑路→refund；恶意 dispute→最多拿回 50%
 
-    /// agent 锁定一笔款，约定交付截止；arbiter 传 0 地址表示无仲裁
+    /// agent 锁定资金：期望交付哈希 + 交付截止 + 争议窗口时长；arbiter 传 0 地址表示无仲裁
     function lockEscrow(
         address payee,
         bytes32 expectedHash,
         uint256 timeoutSecs,
+        uint256 challengeSecs,
         address arbiter
     ) external payable returns (uint256 id) {
         require(msg.value > 0, "AgentPay: amount required");
@@ -246,32 +254,64 @@ contract AgentPayVault {
             payer: msg.sender,
             payee: payee,
             amount: msg.value,
+            expectedHash: expectedHash,
             deliveryHash: bytes32(0),
             deadline: block.timestamp + timeoutSecs,
+            challengeDeadline: 0,
+            challengePeriod: challengeSecs,
             status: EscrowStatus.Locked,
             arbiter: arbiter
         });
         emit EscrowLocked(id, msg.sender, payee, msg.value);
     }
 
-    /// 服务商提交交付凭证：存绑定上下文的哈希，防跨任务重用
+    /// 服务商提交交付凭证：存绑定上下文的哈希防跨任务重用；同时开启争议窗口
     function deliver(uint256 id, bytes32 resultHash) external {
         Escrow storage e = escrows[id];
         require(msg.sender == e.payee, "AgentPay: not payee");
         require(e.status == EscrowStatus.Locked, "AgentPay: not locked");
+        require(block.timestamp <= e.deadline, "AgentPay: past deadline");
         bytes32 boundHash = keccak256(abi.encode(id, msg.sender, resultHash));
         e.deliveryHash = boundHash;
+        e.challengeDeadline = block.timestamp + e.challengePeriod;
         e.status = EscrowStatus.Delivered;
-        emit EscrowDelivered(id, boundHash);
+        emit EscrowDelivered(id, boundHash, e.challengeDeadline);
     }
 
-    /// agent 确认交付无误 → 释放资金
+    /// agent 确认交付（链下比对 resultHash 与 expectedHash 后调用）→ 100% 给服务商
     function release(uint256 id) external {
         Escrow storage e = escrows[id];
         require(msg.sender == e.payer, "AgentPay: not payer");
         require(e.status == EscrowStatus.Delivered, "AgentPay: not delivered");
         e.status = EscrowStatus.Released;
         emit EscrowReleased(id);
+        (bool ok, ) = e.payee.call{ value: e.amount }("");
+        require(ok, "AgentPay: transfer failed");
+    }
+
+    /// 争议窗口内买方发起 dispute → 50/50 强制 split（双输谢林点，恶意争议最多拿回一半）
+    function dispute(uint256 id) external {
+        Escrow storage e = escrows[id];
+        require(msg.sender == e.payer, "AgentPay: not payer");
+        require(e.status == EscrowStatus.Delivered, "AgentPay: not delivered");
+        require(block.timestamp <= e.challengeDeadline, "AgentPay: window closed");
+        e.status = EscrowStatus.Disputed;
+        uint256 half = e.amount / 2;
+        emit EscrowDisputed(id, half, e.amount - half);
+        (bool ok1, ) = e.payer.call{ value: half }("");
+        require(ok1, "AgentPay: payer split failed");
+        (bool ok2, ) = e.payee.call{ value: e.amount - half }("");
+        require(ok2, "AgentPay: payee split failed");
+    }
+
+    /// 争议窗口结束无人 dispute → 服务商乐观取款 100%（买方装死不再卡死资金）
+    function claim(uint256 id) external {
+        Escrow storage e = escrows[id];
+        require(msg.sender == e.payee, "AgentPay: not payee");
+        require(e.status == EscrowStatus.Delivered, "AgentPay: not delivered");
+        require(block.timestamp > e.challengeDeadline, "AgentPay: window open");
+        e.status = EscrowStatus.Released;
+        emit EscrowClaimed(id);
         (bool ok, ) = e.payee.call{ value: e.amount }("");
         require(ok, "AgentPay: transfer failed");
     }

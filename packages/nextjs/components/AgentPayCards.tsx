@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatEther, parseEther, parseSignature, zeroAddress } from "viem";
+import { formatEther, keccak256, parseEther, parseSignature, toBytes, zeroAddress } from "viem";
 import { useAccount, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
@@ -304,12 +304,21 @@ export const PlanCard = () => {
 };
 
 /**
- * EscrowCard —— Escrow 结算：锁款 → 交付凭证 → 释放 / 超时退款
+ * EscrowCard —— 乐观托管：锁款 → 交付开争议窗口 → 释放 / 乐观取款 / 争议50/50 / 超时退款
+ * 与 Monad 执行层同构：乐观假设 + 事后纠错，换取无协调者的吞吐
  */
 export const EscrowCard = () => {
   const { address } = useAccount();
   const [amount, setAmount] = useState("0.005");
   const [busy, setBusy] = useState(false);
+  const [nowSec, setNowSec] = useState(0); // 争议窗口倒计时（effect 内取时，满足渲染纯度）
+
+  useEffect(() => {
+    const update = () => setNowSec(Math.floor(Date.now() / 1000));
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const { data: escrowCount } = useScaffoldReadContract({ contractName: "AgentPayVault", functionName: "escrowCount" });
   const latestId = escrowCount && escrowCount > 0n ? escrowCount : 0n;
@@ -321,9 +330,20 @@ export const EscrowCard = () => {
   });
 
   const e = escrowRaw as unknown as
-    | { payer: string; payee: string; amount: bigint; deliveryHash: string; deadline: bigint; status: number }
+    | {
+        payer: string;
+        payee: string;
+        amount: bigint;
+        expectedHash: string;
+        deliveryHash: string;
+        deadline: bigint;
+        challengeDeadline: bigint;
+        challengePeriod: bigint;
+        status: number;
+        arbiter: string;
+      }
     | undefined;
-  const STATUS = ["🔒 已锁定", "📦 已交付", "✅ 已释放", "↩️ 已退款"];
+  const STATUS = ["🔒 已锁定", "📦 已交付·争议窗口", "✅ 已释放/已取款", "↩️ 已退款", "⚖️ 争议 50/50"];
 
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
 
@@ -342,11 +362,18 @@ export const EscrowCard = () => {
     }
   };
 
+  // 演示用：期望交付物固定为 "agent-task-result-v1"，链下可比对 expectedHash
+  const DEMO_RESULT_HASH = keccak256(toBytes("agent-task-result-v1"));
+  const windowOpen =
+    e && e.status === 1 && e.challengeDeadline > 0n && nowSec > 0 && BigInt(nowSec) <= e.challengeDeadline;
+
   return (
     <div className="card bg-base-200 border border-accent/30">
       <div className="card-body gap-3">
-        <h2 className="card-title">🤝 Escrow 结算</h2>
-        <p className="text-xs text-base-content/60 -mt-2">锁款担保 → 交付凭证哈希上链 → 确认释放 / 超时自动退款</p>
+        <h2 className="card-title">🤝 乐观托管 Escrow</h2>
+        <p className="text-xs text-base-content/60 -mt-2">
+          交付即开争议窗口：买方确认释放 / 窗口过期服务商乐观取款 / 窗口内争议 50/50 / 未交付任何人可触发退款
+        </p>
 
         <div className="flex gap-2 flex-wrap items-center">
           <label className="input input-sm flex items-center gap-1">
@@ -362,15 +389,10 @@ export const EscrowCard = () => {
                 () =>
                   writeContractAsync({
                     functionName: "lockEscrow",
-                    args: [
-                      address!,
-                      "0x0000000000000000000000000000000000000000000000000000000000000000",
-                      3600n,
-                      zeroAddress,
-                    ],
+                    args: [address!, DEMO_RESULT_HASH, 600n, 60n, zeroAddress],
                     value: parseEther(amount),
                   }),
-                "资金已锁定进 Escrow",
+                "资金已锁定（交付期 10 分钟 + 争议窗口 60 秒）",
               )
             }
           >
@@ -394,14 +416,9 @@ export const EscrowCard = () => {
                     () =>
                       writeContractAsync({
                         functionName: "deliver",
-                        args: [
-                          latestId,
-                          `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)))
-                            .map(b => b.toString(16).padStart(2, "0"))
-                            .join("")}` as `0x${string}`,
-                        ],
+                        args: [latestId, DEMO_RESULT_HASH],
                       }),
-                    "交付凭证已上链",
+                    "交付凭证已上链，争议窗口开启（60s）",
                   )
                 }
               >
@@ -411,10 +428,34 @@ export const EscrowCard = () => {
                 className="btn btn-xs btn-success"
                 disabled={busy || e.status !== 1}
                 onClick={() =>
-                  act(() => writeContractAsync({ functionName: "release", args: [latestId] }), "资金已释放给服务商")
+                  act(() => writeContractAsync({ functionName: "release", args: [latestId] }), "已确认释放 100%")
                 }
               >
-                确认释放
+                买方确认释放
+              </button>
+              <button
+                className="btn btn-xs btn-warning"
+                disabled={busy || !windowOpen}
+                onClick={() =>
+                  act(
+                    () => writeContractAsync({ functionName: "dispute", args: [latestId] }),
+                    "争议成立：50/50 强制 split",
+                  )
+                }
+              >
+                争议 50/50
+              </button>
+              <button
+                className="btn btn-xs btn-secondary"
+                disabled={busy || e.status !== 1 || windowOpen}
+                onClick={() =>
+                  act(
+                    () => writeContractAsync({ functionName: "claim", args: [latestId] }),
+                    "窗口无争议，服务商乐观取款 100%",
+                  )
+                }
+              >
+                乐观取款
               </button>
               <button
                 className="btn btn-xs btn-ghost"
