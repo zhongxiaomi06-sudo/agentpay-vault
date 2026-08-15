@@ -6,8 +6,8 @@ import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({
-  title: "Scaffold-ETH 2 App",
-  description: "Built with 🏗 Scaffold-ETH 2",
+  title: "AgentPay Vault — AI Agent 微支付结算层",
+  description: "x402 的合约补层：流支付金库 + 按次计量 + 任务托管，on Monad",
 });
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {

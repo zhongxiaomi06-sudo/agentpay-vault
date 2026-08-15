@@ -15,10 +15,12 @@ export const StreamCard = () => {
   const [rate, setRate] = useState("0.00001"); // MON/秒
   const [deposit, setDeposit] = useState("0.01"); // 总押金 MON
   const [busy, setBusy] = useState(false);
-  const [, setTick] = useState(0); // 每秒重渲染驱动余额流动
+  const [nowSec, setNowSec] = useState(0); // 每秒刷新驱动余额流动（effect 内取时，满足 React 渲染纯度）
 
   useEffect(() => {
-    const t = setInterval(() => setTick(n => n + 1), 1000);
+    const update = () => setNowSec(Math.floor(Date.now() / 1000));
+    update();
+    const t = setInterval(update, 1000);
     return () => clearInterval(t);
   }, []);
 
@@ -38,7 +40,7 @@ export const StreamCard = () => {
     | { payer: string; payee: string; deposit: bigint; ratePerSecond: bigint; start: bigint; withdrawn: bigint; active: boolean }
     | undefined;
   const active = s?.active;
-  const elapsed = s ? Math.max(0, Math.floor(Date.now() / 1000) - Number(s.start)) : 0;
+  const elapsed = s && nowSec > 0 ? Math.max(0, nowSec - Number(s.start)) : 0;
   const accrued = s ? BigInt(elapsed) * s.ratePerSecond : 0n;
   const earnedNow = s ? (accrued > s.deposit ? s.deposit : accrued) : 0n;
   const liveEarned = active ? earnedNow : 0n;

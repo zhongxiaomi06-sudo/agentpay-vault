@@ -4472,6 +4472,9 @@ __metadata:
     "@trivago/prettier-plugin-sort-imports": "npm:^6.0.2"
     "@types/node": "npm:^18.19.130"
     "@types/react": "npm:^19.2.14"
+    "@x402/core": "npm:2.22.0"
+    "@x402/evm": "npm:2.22.0"
+    "@x402/svm": "npm:2.22.0"
     abitype: "npm:1.2.4"
     bgipfs: "npm:^0.0.18"
     blo: "npm:^2.0.0"
@@ -4604,12 +4607,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@solana-program/compute-budget@npm:^0.11.0":
+  version: 0.11.0
+  resolution: "@solana-program/compute-budget@npm:0.11.0"
+  peerDependencies:
+    "@solana/kit": ^5.0
+  checksum: 10/7aabd69359df7da2633c9bee1aca9bced5c3df5d5126cb2a830fb285679f3269fe613f4664ccd3a2f37b3666e1f96cc887a594d75901ed5004c68c5f555224f8
+  languageName: node
+  linkType: hard
+
 "@solana-program/system@npm:^0.10.0":
   version: 0.10.0
   resolution: "@solana-program/system@npm:0.10.0"
   peerDependencies:
     "@solana/kit": ^5.0
   checksum: 10/f26304d3e7e178651b4d55f88261556f17720b82f70490fab7b6a575d4e34ded1744bf174e952b025d6e0b61e82b5496addd676eacebd37fc87cdf73ffc9a47b
+  languageName: node
+  linkType: hard
+
+"@solana-program/token-2022@npm:^0.6.1":
+  version: 0.6.1
+  resolution: "@solana-program/token-2022@npm:0.6.1"
+  peerDependencies:
+    "@solana/kit": ^5.0
+    "@solana/sysvars": ^5.0
+  checksum: 10/ed4c96a42b93351f4d50a04e14c1427ddf636d108ce9d4320d872530a8367a6acc36fca87ed5ccf029cdc57b67c6b75e5d7fc830b3a6e74dd4a994fda0820b0d
   languageName: node
   linkType: hard
 
@@ -7179,6 +7201,40 @@ __metadata:
     multiformats: "npm:^13.3.1"
     uint8arrays: "npm:^5.1.0"
   checksum: 10/56b0e5cfd33d1e17eafff5ffc549ac1603154ceca9d655eb455dbcd55e16a4dbc743fbaa9903e6fbb467eee5bf4f8756d8444538a20d3dc0caae53882bcb25dd
+  languageName: node
+  linkType: hard
+
+"@x402/core@npm:2.22.0, @x402/core@npm:~2.22.0":
+  version: 2.22.0
+  resolution: "@x402/core@npm:2.22.0"
+  dependencies:
+    zod: "npm:^3.24.2"
+  checksum: 10/c404b0469f1fb775e9eb3571af905548ef7bce073a30995721ee5bbc4bc144578cb7cc9bdd3937ba1b480cf53d43bd2110f7cc31b66019711c478704d9cb6b94
+  languageName: node
+  linkType: hard
+
+"@x402/evm@npm:2.22.0":
+  version: 2.22.0
+  resolution: "@x402/evm@npm:2.22.0"
+  dependencies:
+    "@x402/core": "npm:~2.22.0"
+    viem: "npm:^2.48.11"
+    zod: "npm:^3.24.2"
+  checksum: 10/977589e7db0b9ed7c2fd69457d605f9cdb74c1a5232911df31f0ce4e310c19dcf2b204a1510cef62a93feb33622ecbcf4479ad0183d5e545d2e626cfed03d480
+  languageName: node
+  linkType: hard
+
+"@x402/svm@npm:2.22.0":
+  version: 2.22.0
+  resolution: "@x402/svm@npm:2.22.0"
+  dependencies:
+    "@solana-program/compute-budget": "npm:^0.11.0"
+    "@solana-program/token": "npm:^0.9.0"
+    "@solana-program/token-2022": "npm:^0.6.1"
+    "@x402/core": "npm:~2.22.0"
+  peerDependencies:
+    "@solana/kit": ">=5.1.0"
+  checksum: 10/6521d87d0904d68bba3cac829999762553e6c97b134be8a88c21d84eee287b764c124d7aeffd3fccfe6eac856b283a4add4e06e6cef520994e403fb14d5bc236
   languageName: node
   linkType: hard
 
@@ -15202,6 +15258,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ox@npm:0.14.33":
+  version: 0.14.33
+  resolution: "ox@npm:0.14.33"
+  dependencies:
+    "@adraffy/ens-normalize": "npm:^1.11.0"
+    "@noble/ciphers": "npm:^1.3.0"
+    "@noble/curves": "npm:1.9.1"
+    "@noble/hashes": "npm:^1.8.0"
+    "@scure/bip32": "npm:^1.7.0"
+    "@scure/bip39": "npm:^1.6.0"
+    abitype: "npm:^1.2.3"
+    eventemitter3: "npm:5.0.1"
+  peerDependencies:
+    typescript: ">=5.4.0"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10/8a1390fa4799fc8629ea64c00b49fe4c5c93417c92033bad7599a1861842af202303ea1cdc85023f19145192563ebe9085609d84b0a3d0145ed1b61e579a2052
+  languageName: node
+  linkType: hard
+
 "ox@npm:0.6.7":
   version: 0.6.7
   resolution: "ox@npm:0.6.7"
@@ -19169,6 +19246,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"viem@npm:^2.48.11":
+  version: 2.55.16
+  resolution: "viem@npm:2.55.16"
+  dependencies:
+    "@noble/curves": "npm:1.9.1"
+    "@noble/hashes": "npm:1.8.0"
+    "@scure/bip32": "npm:1.7.0"
+    "@scure/bip39": "npm:1.6.0"
+    abitype: "npm:1.2.3"
+    isows: "npm:1.0.7"
+    ox: "npm:0.14.33"
+    ws: "npm:8.21.0"
+  peerDependencies:
+    typescript: ">=5.0.4"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10/0d494d91575ce4dd757028c0ad51a11ed2ad5e2e3d06d34bb021088ab958a73ee15f008b53b87b71c9f8b3de92f56e5155b9fdd8d4e3ea43678dbc80f47309e2
+  languageName: node
+  linkType: hard
+
 "viem@npm:^2.48.2":
   version: 2.48.4
   resolution: "viem@npm:2.48.4"
@@ -19874,7 +19972,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.23.8, zod@npm:^3.25.76":
+"zod@npm:^3.23.8, zod@npm:^3.24.2, zod@npm:^3.25.76":
   version: 3.25.76
   resolution: "zod@npm:3.25.76"
   checksum: 10/f0c963ec40cd96858451d1690404d603d36507c1fc9682f2dae59ab38b578687d542708a7fdbf645f77926f78c9ed558f57c3d3aa226c285f798df0c4da16995
