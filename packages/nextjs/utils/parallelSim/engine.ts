@@ -48,6 +48,9 @@ const applyTx = (state: Ledger, tx: SimTx): Ledger => {
 /** 一笔交易"读"了哪些地址的余额（用于冲突检测的 readSet） */
 const readSetOf = (tx: SimTx): Address[] => [tx.from, tx.to];
 
+/** 一笔交易"写"了哪些地址（writeSet）——提交时只能写自己的写集，不能整本覆盖 */
+const writeSetOf = (tx: SimTx): Address[] => [tx.from, tx.to];
+
 export function runParallelSim(snapshot: Ledger, txs: SimTx[]): SimResult {
   // ---- 阶段 1: 乐观并行执行 —— 所有交易读同一份快照 ----
   const optimisticOutputs = txs.map(tx => applyTx(snapshot, tx));
@@ -66,8 +69,10 @@ export function runParallelSim(snapshot: Ledger, txs: SimTx[]): SimResult {
       // 重执行：已提交状态覆盖旧快照，作为新输入
       finalOutput = applyTx({ ...snapshot, ...committed }, tx);
     }
-    // 将最终输出写入已提交状态版本区
-    Object.assign(committed, finalOutput);
+    // 将该交易【写集内】的修改写入已提交状态版本区
+    for (const addr of writeSetOf(tx)) {
+      committed[addr] = finalOutput[addr];
+    }
 
     traces.push({ txId: tx.id, optimisticOutput: optimistic, conflict, reexecuted: conflict, finalOutput });
   });
@@ -80,13 +85,13 @@ export function runParallelSim(snapshot: Ledger, txs: SimTx[]): SimResult {
   };
 }
 
-/** 讲座同款案例：Alice $1000 起始，tx1 与 tx3 都花同一笔钱 → tx3 必须重执行 */
+/** 讲座同款案例：Alice $1000 起始，tx1 与 tx3 都花同一笔钱 → tx3 必须重执行；tx2/tx4 走独立账户对，零冲突 */
 export const MONAD101_PRESET: { snapshot: Ledger; txs: SimTx[] } = {
-  snapshot: { Alice: 1000, Bob: 0, Carol: 3, Dave: 300 },
+  snapshot: { Alice: 1000, Bob: 0, Carol: 3, Dave: 300, Eve: 50, Frank: 0 },
   txs: [
     { id: 1, from: "Alice", to: "Bob", amount: 100 }, // Alice → Bob $100
-    { id: 2, from: "Carol", to: "Dave", amount: 1 }, // 无冲突
+    { id: 2, from: "Carol", to: "Dave", amount: 1 }, // 无冲突（Carol/Dave 此前未被触碰）
     { id: 3, from: "Alice", to: "Bob", amount: 100 }, // ⚡ 与 tx1 冲突：并行执行时它以为 Alice 还有 1000
-    { id: 4, from: "Dave", to: "Carol", amount: 50 }, // 无冲突
+    { id: 4, from: "Eve", to: "Frank", amount: 5 }, // 无冲突（独立账户对）
   ],
 };

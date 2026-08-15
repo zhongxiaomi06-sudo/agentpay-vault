@@ -230,7 +230,9 @@ export const PlanCard = () => {
   const callPaidApi = () =>
     act(async () => {
       if (!vaultInfo || !address) throw new Error("no vault");
-      const callIndex = myCallSeq ?? 0n;
+      // 连点时读最新序号，防缓存滞后导致 callIndex 过期 revert
+      const { data: freshSeq } = await refetchSeq();
+      const callIndex = freshSeq ?? myCallSeq ?? 0n;
       const sig = await signTypedDataAsync({
         domain: {
           name: "AgentPayVault",

@@ -4488,6 +4488,7 @@ __metadata:
     next: "npm:^16.2.4"
     next-nprogress-bar: "npm:^2.4.7"
     next-themes: "npm:^0.4.6"
+    playwright-core: "npm:^1.62.1"
     postcss: "npm:^8.5.10"
     prettier: "npm:^3.8.3"
     qrcode.react: "npm:^4.2.0"
@@ -15933,6 +15934,15 @@ __metadata:
   bin:
     pino: bin.js
   checksum: 10/1c7b4b52fea76e0bc5d8b1190a0fee24279cb16d76fdb5833b32b64256fd8a94d641574b850faba5be72514f04045206b6d902a9a3f5ceae2a4296687088e073
+  languageName: node
+  linkType: hard
+
+"playwright-core@npm:^1.62.1":
+  version: 1.62.1
+  resolution: "playwright-core@npm:1.62.1"
+  bin:
+    playwright-core: cli.js
+  checksum: 10/2dab88793a6a5cbfa27641664548ded72a4f869d7eab8d3541e070081b5e09595253aa3dbd42eb4e6eca1b03d96a727c60704359b5b309e71ca58b12549a4c06
   languageName: node
   linkType: hard
 

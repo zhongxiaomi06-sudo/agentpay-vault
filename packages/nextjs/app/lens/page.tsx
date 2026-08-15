@@ -12,6 +12,8 @@ const ADDR_STYLE: Record<string, string> = {
   Bob: "badge-secondary",
   Carol: "badge-accent",
   Dave: "badge-info",
+  Eve: "badge-warning",
+  Frank: "badge-neutral",
 };
 
 const ParallelLens: NextPage = () => {
@@ -162,11 +164,11 @@ const ParallelLens: NextPage = () => {
                 </thead>
                 <tbody>
                   {Object.keys(snapshot).map(addr => {
-                    // 直接套最后一个涉及该地址的乐观输出会得到的错误值
-                    const optimisticWrong = result.traces.reduce(
-                      (acc, t) => (addr in t.optimisticOutput ? t.optimisticOutput[addr] : acc),
-                      snapshot[addr],
-                    );
+                    // 只看【写集包含该地址】的交易的乐观输出（乐观输出是整本拷贝，须按写集过滤）
+                    const optimisticWrong = result.traces.reduce((acc, t) => {
+                      const tx = txs.find(x => x.id === t.txId);
+                      return tx && (tx.from === addr || tx.to === addr) ? t.optimisticOutput[addr] : acc;
+                    }, snapshot[addr]);
                     const correct = result.finalState[addr];
                     const mismatch = optimisticWrong !== correct;
                     return (

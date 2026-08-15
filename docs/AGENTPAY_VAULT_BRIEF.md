@@ -1,229 +1,293 @@
-# AgentPay Vault —— 完整开发文档 · 问题点解读 · 竞品调研对比
+# AgentPay Vault：当前版本产品与路演分析
 
-> 版本：2026-08-15（Monad Blitz 北京 V2 提交版）
-> 仓库：`~/Web3/parallel-lens`（Scaffold-ETH 2 Hardhat 版）
-> 定位一句话：**x402/MPP 教 agent 怎么开口谈钱（HTTP 授权层），AgentPay Vault 是钱在 Monad 链上的账本和保险柜（结算状态机）。**
+> 基线：2026-08-15 当前工作树（Monad Testnet）  
+> 用途：产品定位、技术真实性、竞品边界、答辩策略  
+> 配套路演稿：[ROADSHOW_SCRIPT.md](./ROADSHOW_SCRIPT.md)
 
----
+## 1. 执行摘要
 
-## 目录
+AgentPay Vault 是面向 AI Agent 与数字服务商的链上结算状态机。它不替代钱包、HTTP 支付协议或服务市场，而是管理支付授权之后的资金关系：钱怎么预付、按什么粒度扣、何时释放、失败后如何退出。
 
-1. 项目定位
-2. 系统架构与模块清单
-3. 核心机制设计（含真实接口）
-4. Monad 原生性验证对账单
-5. 问题点解读（代码级 + 机制级 + 口径修正）
-6. 竞品调研与对比（带来源）
-7. 差异化定位与答辩话术库
-8. 风险与 Roadmap
-9. 附录：网络参数 / 账户 / 命令
+一句话定位：
 
----
+> **x402 让机器通过 HTTP 发起和结算单次支付；AgentPay Vault 把结算关系扩展到时间、批量调用和任务交付。**
 
-## 1. 项目定位
+项目只解决三类消费关系：
 
-| 维度 | 内容 |
-|---|---|
-| 是什么 | AI agent 经济的链上结算层：流支付（时间）+ 按次计量（用量）+ 托管（任务）三种粒度，一个合约 |
-| 解决的真问题 | ① 互不信任主体间的公平交换（无仲裁最小机制）② $0.0001–$0.1 死亡价格带服务在卡体系下根本无法存在 ③ Monad 需要"什么应用非 10K TPS 不可"的实证 |
-| 不是什么 | 不是又一个支付协议（不发明轮子）；不是 agent 零工市场（那是 PrismSettle 的应用层定位） |
-| 与 x402/MPP 关系 | 互补：它们是客户端/授权层，我们是它们 settle 到 Monad 时的链上资金状态机。ChannelVault 即 MPP Session 的 Monad 原生合约实现 |
+| 消费关系 | 典型服务                         | 当前结算原语                      |
+| -------- | -------------------------------- | --------------------------------- |
+| 连续服务 | 长时间推理、Agent 托管、RPC 会话 | Stream 按秒累计                   |
+| 离散调用 | 数据 API、模型调用、工具调用     | Meter 逐次记账 / Channel 批量结算 |
+| 任务交付 | 报告、代码、研究或自动化结果     | Optimistic Escrow                 |
 
-## 2. 系统架构与模块清单
+页面上有四张结算卡，但不是四个平级产品。Meter 和 Channel 是“离散调用”的两种成本模型：前者强调实时状态，后者强调链下聚合。
 
-```
-┌─ packages/hardhat/contracts ─────────────────────────────┐
-│ AgentPayVault.sol  (11.9K)  流支付 + 按次 meter + Escrow  │
-│ ChannelVault.sol   (4.0K)   EIP-712 累计 voucher 通道     │
-│ ConflictLab.sol    (1.8K)   并行冲突实验台（热状态）       │
-│ YourContract.sol   (2.9K)   ⚠️ 模板残留，提交前删除        │
-└──────────────────────────────────────────────────────────┘
-┌─ packages/nextjs/app ────────────────────────────────────┐
-│ /        产品主页：StreamCard / PlanCard(meter 流程) /     │
-│          ChannelCard / EscrowCard / P256Panel / LivePanel │
-│ /lens    ParallelLens 并行执行可视化                      │
-└──────────────────────────────────────────────────────────┘
-中间件：Next.js /api/paid-data —— 真 402 状态码路由（非前端模拟）
-```
+## 2. 为什么需要这层
 
-- 部署账户（一次性）：`0xD198407729C779Aa994Ffa9EF10dAae2AE523252`，私钥在 `packages/hardhat/.env`
-- 部署命令：`yarn deploy --network monadTestnet` → `yarn vercel:yolo --prod`
-- 支付媒介：**测试网 demo 用原生 MON**（payable），主网版切 USDC（SafeERC20）
+官方 x402 流程已经覆盖 `402 → 支付要求 → 签名载荷 → 验证 → 链上结算 → 返回资源`，因此不能再把 x402 简化成“只授权、不结算”。AgentPay 的准确差异不是“我们替 x402 做结算”，而是：
 
-## 3. 核心机制设计
+- x402 的核心抽象是一次 HTTP 资源请求的一次支付；
+- Agent 服务还存在持续计费、成千上万次会话调用、交付后付款等长期资金关系；
+- AgentPay 用合约状态机表达这些跨请求、跨时间的关系；
+- `/api/paid-data` 展示如何把 HTTP 支付挑战接到自定义 Meter 授权上。
 
-### 3.1 流支付 Stream（时间驱动 —— 全场独有）
+官方参考：
 
-```
-openStream(payee, ratePerSecond) payable   // agent 预付押金
-earned(id) → uint256                       // 读时结算：(now-start)*rate，无需 keeper
-solvent(id) → bool                         // 中间件一次 eth_call 放行
-withdrawStream(id)                          // 服务商随用随取已归属部分
-closeStream(id)                             // 先结归属给服务商，再退余额给 agent
+- [Coinbase：How x402 Works](https://docs.cdp.coinbase.com/x402/core-concepts/how-it-works)
+- [Coinbase：x402 v2 Migration Guide](https://docs.cdp.coinbase.com/x402/migration-guide)
+- [Tempo：Machine Payments / MPP](https://docs.tempo.xyz/)
+
+## 3. 当前系统边界
+
+```text
+Agent（买方）
+   │ 预付、锁款或签署授权
+   ▼
+HTTP/API 层 ── 检查请求与签名 ──► 返回数字服务
+   │
+   ▼
+AgentPayVault / ChannelVault
+   │ 记录时间、额度、累计 voucher、交付状态
+   ▼
+Provider（服务商）提现或结算
 ```
 
-- 关键性质：无循环、无 cron、数学自动收敛、无清算角色（对比 Superfluid 依赖 keeper 清算）
-- `closeStream` 顺序：先算 `outstanding` 给服务商再退 `refund`——顺序反了就是资金漏洞
+### 3.1 角色
 
-### 3.2 按次计量 Plan / meter（用量驱动）
+- **Agent**：购买 API、算力、数据或任务结果。
+- **Provider**：提供服务并获得结算收入。
+- **Vault**：保存预付资金与状态，不判断服务内容本身。
+- **HTTP 中间件 / Relayer**：验证授权、返回服务，并在需要时代 Provider 提交结算。
 
-```
-createPlan(pricePerCall)                    // 服务商挂单（链上服务市场）
-subscribe(planId, calls) payable            // agent 预付 N 次额度
-call(planId)                                // agent 自助调用（自付 gas）
-meter(planId, agent, callIndex, v, r, s)    // x402 模式：agent 离线签 MeterAuth，服务商代付 gas 上链
-withdrawProvider()                          // 服务商提现（pull over push）
-```
+当前 UI 为了单钱包演示，把 Agent 与 Provider 折叠成同一个连接地址。因此页面证明的是状态机可以运行，不是完整的双边商业交易。路演必须主动说明这一点。
 
-- EIP-712 `MeterAuth(planId, agent, callIndex)`，domain 绑死 chainId + 合约地址
-- `callIndex` 严格等于链上 `callSeq` 递增——防重放、防跳号
-- `pending[provider]` 即热状态：并发写争抢点，Monad 乐观并行 + 重放保证正确（演示叙事核心）
-- `protocolFeeBps`（默认 0，上限 5%）：被问商业模式时的现成答案
+## 4. 当前实现
 
-### 3.3 Escrow（任务托管）
+### 4.1 Stream：时间驱动
 
-```
-lockEscrow(payee, expectedHash, timeoutSecs, arbiter) payable
-deliver(id, resultHash)    // 存 keccak256(id, payee, resultHash)，绑定上下文防跨任务重用
-release(id)                // agent 链下验证结果哈希匹配后确认释放
-refundExpired(id)          // 超时未交付，任何人可触发退款（pull，无"自动"）
+```text
+openStream(payee, ratePerSecond)
+  → earned(id) 按时间读取应计金额
+  → withdrawStream(id) 服务商提取已归属金额
+  → closeStream(id) 结清服务商并退回剩余余额
 ```
 
-### 3.4 ChannelVault（通道 —— MPP Session 兼容叙事）
+当前性质：
 
-- `Voucher(channelId, cumulativeAmount)`：**cumulativeAmount 单调递增天然是 nonce**，旧 voucher 直接拒绝（`stale voucher`），接口省一个参数
-- 可多次 claim，按增量结算；过期后 agent `closeChannel` 取回 `budget - settled`
-- 独立 EIP-712 domain（与 AgentPayVault 隔离更干净）
-- 一万次调用 = 2 笔链上交易——**注意：这是 Stripe MPP 的原话卖点，只能讲"我们兼容 MPP 语义"，不能讲"我们发明"**
+- Agent 预付原生 MON；
+- `earned` 使用 `min(elapsed × rate, deposit)`，不会超出押金；
+- 不需要 keeper 或 cron 推动余额；
+- `solvent` 可供服务端通过一次 `eth_call` 判断服务是否继续；
+- 页面按秒刷新只是展示，真正金额来自合约时间公式。
 
-### 3.5 ConflictLab（并行实证）
+适合讲解：持续推理会话只为实际使用的秒数付费。
 
-- `hotCounter` 全局热计数器：每笔 transfer/deposit 都写它 → 故意制造状态冲突
-- 用途：N 账户并发转账，测 Monad 乐观并行执行下的冲突率/有效吞吐——**性能声明的第三方实证**
-- /lens 页把并行执行、冲突、重放可视化
+### 4.2 Meter：逐次授权与记账
 
-### 3.6 P256（agent 密钥验签）
-
-- EIP-7951 precompile 在 `0x0100`，**2026-08-15 双网实测**：测试网/主网有效签名返回 1，篡改返回空
-- 前端 P256Panel 用 noble-curves 生成 P256 密钥模拟 Secure Enclave，链上 precompile 真验证（不接 WebAuthn，降风险；真 passkey 进 roadmap）
-- ⚠️ 口径：P256 是"agent 硬件密钥验签可用性"的验证面板，**不在主结算路径**（结算用 ecrecover）
-
-## 4. Monad 原生性验证对账单
-
-| Monad 特性 | 验证操作 | 状态 |
-|---|---|---|
-| 并行执行 / 高 TPS | ConflictLab 并发压测热状态 + /lens 可视化 | ✅ |
-| 0.3s 块 / 0.6s 终局（MIP-12，2026-07 硬分叉） | 流支付余额条按秒真实变动 | ✅ demo 即证据 |
-| P256 precompile（0x0100） | 双网 eth_call 实测 | ✅ |
-| 低 gas | **`meter()` gas 实测 → 换算美元/次** | ⚠️ 提交前补这个数字：`forge test --gas-report` 或部署后实测 |
-
-## 5. 问题点解读
-
-### 5.1 代码级（读码发现，按严重度）
-
-| # | 问题 | 位置 | 处置 |
-|---|---|---|---|
-| P0 | **`expectedHash` 是 dead param**：lockEscrow 接收但从不存储，deliver 也不比对——"期望哈希校验"实际未闭环 | AgentPayVault `lockEscrow` | 要么存储并在 release 前供链下读取比对（写进 README 流程），要么删参数。**评委读码会问** |
-| P0 | **Escrow 买方装死漏洞**：服务商交付后 agent 不 release 也不 dispute，无法到期退款（已 Delivered 状态 refundExpired 拒绝）→ 资金卡死，或退化成买方白嫖 | Escrow 段 | 升级乐观托管（claim/dispute/争议窗口），见 5.2；来不及就写 roadmap 并主动讲 |
-| P1 | 无 ReentrancyGuard：全部转账用低级 `call`。CEI 顺序基本正确（先更新状态再转账），但 `closeStream` 先转 payee 再转 payer，payee 若为合约有跨函数重入面 | 全部转账点 | 黑客松可接受；答辩口径"已知悉，主网版加 ReentrancyGuard + 改 USDC SafeERC20" |
-| P1 | ChannelVault `claim` 是 push 直转，与"pull over push"叙事不一致 | ChannelVault | 话术：通道结算额小、单笔即结；沉淀收入走 pending 提现。或承认并说明取舍 |
-| P2 | `claim` 无 expiry 检查：agent 不 close 则 voucher 永久可 claim | ChannelVault | 设计可接受（expiry 仅是 agent 提款门槛），README 写明 |
-| P2 | YourContract.sol 模板残留 | contracts/ | 提交前删除，避免评委误读 |
-| P3 | 支付媒介是原生 MON 而非 USDC | 全部 payable | 演示简化成立；主网口径：切 USDC + SafeERC20（x402 语义一致） |
-
-### 5.2 机制级（升级方案：乐观托管 Optimistic Escrow）
-
-**痛点**：现有 escrow 只保护买方（超时退款），卖方交付后买方装死即白嫖——无仲裁 escrow 的经典死穴。
-
-**升级**（改动封闭在 escrow 段，~1.5h 合约+测试，0.5h 前端）：
-
-```
-deliver(id, resultHash)   // 开启 challengePeriod 争议窗口
-release(id)               // 买方确认 → 100% 给服务商（提前终局）
-claim(id)                 // 窗口期无人 dispute → 服务商乐观取款 100%
-dispute(id)               // 窗口内买方发起 → 50/50 强制 split（双输谢林点）
-refundExpired(id)         // deadline 未交付 → 全额退买方（不变）
+```text
+Provider createPlan(price)
+  → Agent subscribe(planId, calls)
+  → Agent 签 MeterAuth(planId, agent, callIndex)
+  → Provider/Relayer 调 meter(...signature)
+  → credits - 1，callSeq + 1，收入进入 pending
+  → Provider withdrawProvider()
 ```
 
-博弈覆盖：买方装死→claim 堵死；服务商交垃圾→dispute 可信威胁；服务商跑路→refund；买方恶意 dispute→最多拿回 50%。
+安全约束：
 
-**叙事同构**：Monad 执行层乐观并行（先跑、冲突重放）⇆ 我们结算层乐观托管（先放款、争议惩罚）——"乐观假设 + 事后纠错，换取无协调者的吞吐"。
+- EIP-712 domain 绑定 chain ID 和合约地址；
+- `callIndex` 必须等于链上 `callSeq`，防止重放和跳号；
+- 服务商收入采用 `pending` 后主动提现；
+- `protocolFeeBps` 只在 `meter()` 路径收取，默认 0、上限 5%；
+- `call()` 是 Agent 自付 gas 的直调备选路径，但当前不会扣协议费。
 
-### 5.3 口径修正（台上别报错）
+当前真实性边界：
 
-- 出块 **0.3s**、终局 **0.6s**（MIP-12 后），不是"0.6s 块"
-- 测试网 RPC 用 `https://testnet-rpc.monad.xyz`；门户写的 `rpc.testnet.monad.xyz` 已 NXDOMAIN 失效
-- "超时自动退款"改口"超时后任何人可触发 refund（pull 模式）"
-- USDC 测试币：Circle faucet（faucet.circle.com 选 Monad Testnet）；MON：faucet.monad.xyz / faucet.quicknode.com/monad
+- `/api/paid-data` 会返回真实 HTTP 402，并验证额度、序号和 EIP-712 签名；
+- 它使用自定义 `x-payment-auth` 头和 `meter-eip712` scheme，不是 x402 v2 标准头部与标准 scheme；
+- 首页按钮没有请求该 API，而是本地签名后直接调用 `meter()`；
+- 当前连接钱包实际提交 `meter()`，所以 UI 不能证明“Agent 零 gas、Provider 代付”；
+- 准确口径是“x402 风格参考实现 + 可由服务商/relayer 代提交的链上 Meter 原语”。
 
-## 6. 竞品调研与对比
+### 4.3 Channel：批量调用结算
 
-### 6.1 协议层（巨头战场，2026 年中）
-
-| 协议 | 背后 | 层 | 关键事实 | 我们的关系 |
-|---|---|---|---|---|
-| x402 | Coinbase→Linux 基金会 | 结算轨 | 1.54 亿笔；**明确无退款/托管**；真实日流水 ~$28K | 我们的上游+宿主 |
-| MPP | Stripe+Tempo（2026-03 上线） | 会话 | **链上 escrow+链下累计 voucher+末张结算=2 笔交易**，100+ 厂商 | ChannelVault 同构——讲兼容不讲发明 |
-| AP2 | Google→FIDO | 授权 | 不结算、不托管 | 授权层可叠加 |
-| ACP | Stripe+OpenAI | 结账 | OpenAI 2026-03 已关聊天内结账 | 场景不同（人在场） |
-| Skyfire | — | 钱包基建 | KYA 企业身份 | 我们 P256 是更底层的 KYA 原语 |
-
-### 6.2 机制谱系（乐观托管的"真实机制"考证）
-
-| 先例 | 机制 | 引用价值 |
-|---|---|---|
-| ASW 乐观公平交换（Asokan 等, ACM CCS 1997, [论文](https://www.shoup.net/papers/fex.pdf)） | 诚实时 TTP 零参与，争议才唤醒 | 学术血统，28 年 |
-| Bisq（[争议机制](https://bisq.wiki/Dispute_Resolution_in_Bisq_1)） | 双方互押保证金 + 时间锁烧毁全部资金（MAD） | 生产级对称惩罚先例；社区已知[勒索/抵押不足辩论](https://bisq.community/t/i-cant-quite-understand-how-deposits-can-be-so-low/11551) |
-| UMA 乐观预言机（[官方文档](https://docs.uma.xyz/protocol-overview/how-does-umas-oracle-work)） | 断言+押注+争议窗口，99.8% 无争议通过（Polymarket 规模） | "乐观假设"生产验证 |
-
-**判定：乐观争议窗口不是发明；我们的创新在"彻底移除仲裁者 + 与流支付复合（渐变释放）+ 用在 agent 结算"这个组合。讲谱系+取舍，别讲发明。**
-
-### 6.3 同场竞品（Monad Playground 展示页实读）
-
-| 项目 | 机制 | 强度 | 我们的错位 |
-|---|---|---|---|
-| [PrismSettle #335](https://mojo.devnads.com/projects/335) | escrow+**人工仲裁**（败方付仲裁费）+256 分片声誉+x402+3 个 DeepSeek agent 现场谈判翻案 | ★★★★ | 它是应用层零工市场；我们零仲裁者零抵押（更轻）；它有声誉我们没有 |
-| [Bonded Agent #347](https://mojo.devnads.com/projects/347) | **卖方履约保证金**：差额自动从押金补足，用户本金零损失；真 AMM 真实滑点演示；12/12 测试；内置 Moss 管线 | ★★★★ | 它押卖方抵押（资本效率低）；我们不押；传统金融"履约保函"叙事它占了 |
-| ReviewPool #348 | PR 赏金托管支付 | ★★ | 单场景 |
-| Mindmark #340 | 锁定预算+验收+结算 AI 任务 | ★★ | 单场景 |
-| 其余 | 游戏×3、钱包工具×3、信誉×2、意图守卫×2 等 | — | 无结算层撞车 |
-
-### 6.4 争议解决光谱（答辩核弹页）
-
-```
-保护力度 →
-Bonded Agent      PrismSettle        AgentPay 乐观托管      裸 x402
-卖方超额抵押      仲裁者在线          零第三方零抵押         无救济
-本金零损失        败方付仲裁费        极端各损 50%          交付即终局
-←——— 资本效率 / 无许可 / 机器速度 ———→
+```text
+Agent openChannel(provider, expiry)
+  → 每次调用离线签 Voucher(channelId, cumulativeAmount)
+  → Provider 提交最后一张 voucher
+  → claim 只支付 cumulativeAmount - settled
+  → 过期后 Agent closeChannel 取回余额
 ```
 
-高频小额 agent 交易押不起保证金、等不起仲裁——"轻"是这个价格带的正确取舍。
+累计金额严格递增，旧 voucher 会因 `stale voucher` 被拒绝。大量调用可以压缩为“开通道 + 最终结算”两笔链上交易，也允许中途多次 claim。
 
-## 7. 差异化定位与答辩话术库
+当前 ChannelVault 是自定义 EIP-712 通道，与 MPP Session 的思路相近，但没有实现或验证 MPP 协议兼容性。路演只能说“语义对齐/同类设计”，不能说“MPP 兼容实现”。
 
-**三个真优势（有证据）**：
-1. **时间驱动结算原语**——全场无人有；MPP/x402 全是用量/次数驱动，Superfluid 靠 keeper 且不为 agent 设计
-2. **并行实测**——ConflictLab 是 Monad 性能声明的第三方实证，24 个项目没人做
-3. **P256 实测**——双网验证，全场没人碰 precompile
+### 4.4 Optimistic Escrow：任务交付
 
-**Q&A 速查**：
-- 解决什么：x402 管"能不能付"，我们管"按什么粒度结算、钱在链上怎么管"；公平交换+死亡价格带+Monad 性能对账单
-- 并行冲突怎么解：协议层乐观重放兜底正确性；合约层 slot 隔离+pull 聚合；业务层 voucher 单调递增=交换律，任意顺序收敛
-- 为什么必须 Monad：10K TPS 扛并发、0.3s 块让流式可见、低 gas 让按次记账成立、P256 独占——四特性用满四个
-- 商业模式：protocolFeeBps（结算抽成）+ 被生态收编为参考实现
-- 金句："支付是动作，结算是制度。""Stripe 和 Coinbase 在争授权标准，但授权到链上那一刻都需要结算状态机——Monad 还没有，我们就是。"
+```text
+Locked
+  ├─ 到期未交付 → Refunded（100% 退 Agent）
+  └─ Provider deliver → Delivered / 开启争议窗口
+                         ├─ Agent release → Provider 100%
+                         ├─ Agent dispute → Agent 50% / Provider 50%
+                         └─ 窗口结束 claim → Provider 100%
+```
 
-## 8. 风险与 Roadmap
+当前版本已经完成乐观托管升级：买方装死不再锁死服务商资金，服务商不交付也能超时退款。
 
-- 风险：需求侧（agent 买方）今天真实体量极小（x402 日流水 $28K）；近期真实客户是**卖基础设施的服务商**（RPC/数据 API 按量计费）
-- Roadmap：乐观托管全量版（可选买方押金，防勒索攻击）→ 渐变托管（时间×任务复合释放）→ arbiter hook 激活 → 声誉数据沉淀（dispute 事件即声誉原料）→ 真 WebAuthn passkey → USDC 主网版
+边界：
 
-## 9. 附录
+- `expectedHash` 已存链上，但是否匹配由 Agent 链下判断；
+- `deliveryHash` 绑定 escrow ID、payee 和 resultHash，防跨任务直接复用；
+- 合约不会自动判断“交付物好不好”；
+- `arbiter` 只是预留字段；当前争议固定 50/50，不是仲裁；
+- 50/50 是可预测的最小退出规则，不等于完整公平裁决。
 
-- 测试网：Chain ID **10143**，RPC `https://testnet-rpc.monad.xyz`，浏览器 testnet.monadscan.com
-- 主网：Chain ID **143**，RPC `https://rpc.monad.xyz`
-- Precompiles：0x01–0x11（Fusaka 全量）+ **0x0100 P256** + 0x1000 staking + 0x1001 reserve balance
-- 部署账户：`0xD198407729C779Aa994Ffa9EF10dAae2AE523252`
-- 提交：MOJO 平台（mojo.devnads.com），截止 18:30（Notion）/ 19:00（现场讲稿）
-- 命令：`yarn deploy --network monadTestnet` / `yarn verify --network monadTestnet` / `yarn vercel:yolo --prod`
+### 4.5 P256：能力验证，不在结算主路径
+
+页面生成 P256 密钥、签名并调用 Monad `0x0100` precompile。它证明设备密钥/Passkey 类签名可以在 Monad 原生验证，但当前没有连接 `release()`、`meter()` 或账户权限。
+
+准确口径：
+
+> 已验证的 Agent 硬件密钥入口，下一步接入账户授权与 Escrow 确认。
+
+### 4.6 ParallelLens：机制解释 + 真实负载
+
+- `/lens` 上半部分是本地确定性模拟器，展示同一快照并行执行、读集失效和覆盖重执行；
+- `ConflictLab` 故意让多笔交易写 `hotCounter`，制造链上热状态；
+- `LivePanel` 展示真实测试网交易和同块打包结果；
+- 同块多笔交易不能单独证明节点内部发生并行或重执行，因此不要称为“链上实锤”；
+- 正确说法是：模拟器解释 Monad 官方执行模型，ConflictLab 生成真实冲突型负载并验证最终状态不丢交易。
+
+Monad 官方描述：交易先乐观并行生成 pending result，串行提交时检查输入，输入失效则重执行，从而保持与串行执行相同的结果。参考 [How Monad Works](https://www.monad.xyz/announcements/how-monad-works)。
+
+## 5. 真实性分层
+
+| 能力                          | 当前状态                       | 台上口径                   |
+| ----------------------------- | ------------------------------ | -------------------------- |
+| Stream 按秒累计与结清         | 已实现、已部署                 | 可以直接演示               |
+| Meter EIP-712 防重放          | 已实现、已部署                 | 可以直接演示               |
+| Channel 累计 voucher          | 已实现、已部署                 | 可以直接演示               |
+| 乐观托管 claim/dispute/refund | 已实现、已有测试脚本           | 可以直接演示               |
+| 真 HTTP 402                   | 已实现参考路由                 | 说明为自定义 x402 风格流程 |
+| x402 v2 协议兼容              | 未实现                         | Roadmap，不可声称兼容      |
+| MPP 协议兼容                  | 未实现                         | 只能说设计语义相近         |
+| Provider 代付 gas             | 合约支持，首页未形成双钱包闭环 | 说明目标调用方式           |
+| P256 验签                     | 已验证、独立面板               | 不声称已接入结算主路径     |
+| ParallelLens 执行模型         | 本地模拟 + 链上负载            | 不把同块打包说成重执行证明 |
+| 主网级安全                    | 未完成                         | 测试网原型，明确加固清单   |
+
+## 6. 产品战略
+
+### 6.1 最强切入口
+
+首批客户不是泛化“所有 Agent”，而是已经提供机器可调用服务的 Provider：
+
+- 模型推理与 Agent 托管；
+- RPC、索引和数据 API；
+- 搜索、研究与自动化工具；
+- MCP 工具服务商。
+
+他们已经有可计量的数字服务，但缺少跨请求的链上预算、结算和退款状态。
+
+### 6.2 差异化
+
+不要把差异化讲成“功能最多”，而要讲成“一个统一决策模型”：
+
+```text
+服务按时间存在？        → Stream
+服务按离散次数消费？    → 少量用 Meter，大量用 Channel
+服务需要验收后付款？    → Optimistic Escrow
+```
+
+真正优势：
+
+1. 同一套角色与资金模型覆盖三种消费关系；
+2. 每种关系都有明确退出路径，不只是支付按钮；
+3. 使用 Monad 的低延迟、并行执行和 P256 能力构建机器支付体验；
+4. 合约、测试网部署、UI 和演示脚本都存在，不是纯概念稿。
+
+### 6.3 商业模式
+
+当前 `protocolFeeBps` 只覆盖 Meter 路径，不能宣称全协议已经完成统一抽成。合理演进：
+
+- Meter 结算抽成；
+- Stream / Channel / Escrow 增加统一 fee policy；
+- Provider SDK、托管 relayer 和对账服务；
+- 企业级限额、白名单、审计与 SLA。
+
+## 7. 为什么是 Monad
+
+| Monad 能力                       | 对 AgentPay 的意义                       | 当前证据                                           |
+| -------------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| EVM 兼容与高吞吐                 | 同一服务商面对大量 Agent 调用            | 已部署 Solidity 合约与 ConflictLab 负载            |
+| 乐观并行执行                     | 独立状态可并行，热状态冲突重执行保持正确 | `/lens` 模拟器对应官方模型                         |
+| 约 400ms 区块、约 800ms finality | 交互反馈快，适合机器请求循环             | 使用官方当前网络参数，不再说 0.3s/0.6s             |
+| P256VERIFY                       | Agent 可使用设备密钥或 Passkey 类签名    | `0x0100` 面板实测                                  |
+| 较高 gas capacity                | 支持更密集的 Meter 与结算交易            | `meter()` 有本地测量脚本，金额换算需实时 gas price |
+
+官方当前文档给出的公开参数为 10,000 TPS、400ms block frequency、800ms finality；网络参数可能升级，正式路演前应再次核对 [Monad Documentation](https://docs.monad.xyz/)。
+
+## 8. 竞品与协议位置
+
+| 类别          | 代表                       | 解决什么                             | AgentPay 的关系                                      |
+| ------------- | -------------------------- | ------------------------------------ | ---------------------------------------------------- |
+| HTTP 机器支付 | x402                       | 请求、支付要求、签名、验证与单次结算 | 应成为上游协议；当前仅有自定义风格参考路由           |
+| 机器支付会话  | MPP / Tempo                | Session、streaming 等机器支付能力    | Channel/Stream 概念相邻，但当前未协议兼容            |
+| 流支付协议    | Superfluid 等              | 持续资金流                           | AgentPay 当前是简化的预付时间金库，不依赖外部 keeper |
+| 托管/仲裁市场 | 人工仲裁、抵押或声誉系统   | 更强纠纷处理                         | AgentPay 选择零仲裁、低协调成本，但保护力度更弱      |
+| 支付基础设施  | 钱包、facilitator、relayer | 签名、代付、广播与对账               | AgentPay 应集成，不应取代                            |
+
+竞争口径：
+
+> 我们不是另一个支付 header，也不是另一个 Agent 市场。我们提供的是支付协议和 Agent 服务之间缺少的“长期资金关系状态机”。
+
+## 9. 风险与优先级
+
+### P0：路演可信度
+
+1. UI 明示 Demo 模式中 Agent 与 Provider 使用同一地址；
+2. 不再把首页按钮描述为完整 x402 或真实 Provider 代付；
+3. 不再声称 MPP 兼容；
+4. 不再把同块打包直接称为并行执行证明；
+5. 演示前准备已进入 Delivered 状态的 Escrow，避免现场等待。
+
+### P1：产品闭环
+
+1. 两钱包角色视图，分别展示 Agent 与 Provider 余额；
+2. 首页真实请求 `/api/paid-data`；
+3. Provider relayer 收到授权后提交 `meter()`；
+4. 改为 x402 v2 标准头部和可注册 scheme；
+5. P256 或账户权限真正接入结算授权。
+
+### P2：主网安全
+
+1. 使用 USDC + SafeERC20；
+2. 加 ReentrancyGuard、暂停机制和权限治理；
+3. Stream、Channel、Escrow 统一 fee policy；
+4. 完整单元测试、状态机 invariant、fuzz 和外部审计；
+5. 激活 arbiter hook 或设计可插拔争议策略。
+
+## 10. 答辩原则
+
+### 必须说
+
+- “这是测试网原型，核心状态机已经部署。”
+- “三种消费关系，离散调用有实时与批量两种结算方式。”
+- “HTTP 402 路由是自定义 x402 风格参考实现，标准兼容是下一步。”
+- “P256 与 ParallelLens 是 Monad 能力验证，不是额外支付产品。”
+
+### 不要说
+
+- “x402 只授权、不结算。”
+- “我们已经完整兼容 x402 / MPP。”
+- “一万次调用永远只需要两笔交易。”——只有最终单次 claim 时成立。
+- “P256 已用于 Escrow。”
+- “同一个区块就是并行执行实锤。”
+- “50/50 等于公平仲裁。”
+- “主网已经安全可用。”
+
+### 收束句
+
+> **支付解决一次动作，AgentPay 管理一段经济关系。**
