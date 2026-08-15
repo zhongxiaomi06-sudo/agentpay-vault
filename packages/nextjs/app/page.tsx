@@ -6,38 +6,49 @@ import { P256Panel } from "~~/components/P256Panel";
 
 const Home: NextPage = () => {
   return (
-    <div className="flex flex-col grow items-center px-4 py-8 gap-6 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col grow items-center px-4 py-10 gap-8 max-w-5xl mx-auto w-full">
       {/* Hero */}
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-2">⚡ AgentPay Vault</h1>
-        <p className="text-lg text-base-content/80">AI Agent 经济的微支付结算层 · x402 的合约补层</p>
-        <p className="text-sm text-base-content/60 mt-1 max-w-2xl mx-auto">
-          x402 解决了单次调用即时结算，但 agent 经济有三种消费形态：
-          <b className="text-primary">连续服务</b> / <b className="text-warning">离散调用</b> /{" "}
-          <b className="text-accent">任务交付</b>
-          —— 三个合约原语 + 统一中间件，任何 x402 服务端一行代码切换结算模式。
+      <div className="text-center pt-6">
+        <div className="badge badge-outline border-accent/60 text-accent mb-5 tracking-widest serif">
+          MONAD BLITZ · 北京 V2
+        </div>
+        <h1 className="text-5xl font-bold mb-3 leading-tight">
+          AgentPay <span className="ink-accent">Vault</span>
+        </h1>
+        <p className="text-lg text-base-content/85 serif">AI Agent 跨请求资金关系的结算状态机</p>
+        <p className="text-sm text-base-content/55 mt-3 max-w-2xl mx-auto leading-relaxed">
+          x402 完成单次 HTTP 支付；AgentPay 管理跨时间、跨调用与跨任务的链上结算。
+          <br />
+          三种消费形态，三类结算原语，一个可验证的资金状态层。
         </p>
       </div>
 
-      {/* 三个原语 */}
+      {/* 三个原语标签 */}
+      <div className="flex gap-3 flex-wrap justify-center -mt-2">
+        <span className="badge badge-lg badge-primary badge-outline">🌊 连续服务 · 流支付</span>
+        <span className="badge badge-lg badge-secondary badge-outline">🎫 离散调用 · 按次计量</span>
+        <span className="badge badge-lg badge-accent badge-outline">🤝 任务交付 · 乐观托管</span>
+      </div>
+
+      {/* 原语卡片 */}
       <StreamCard />
       <ChannelCard />
       <EscrowCard />
       <PlanCard />
 
-      {/* Monad 独占能力 */}
+      {/* Monad 原生能力 */}
       <P256Panel />
 
-      {/* 并行执行证明 */}
-      <div className="card bg-base-300 w-full">
-        <div className="card-body py-4 flex-row items-center justify-between flex-wrap gap-3">
+      {/* 并行执行模型演示 */}
+      <div className="card w-full border border-primary/40 bg-gradient-to-r from-primary/15 via-base-200 to-accent/10">
+        <div className="card-body py-5 flex-row items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="card-title text-sm">🔬 为什么只有 Monad 成立？</h2>
-            <p className="text-xs text-base-content/60">
+            <h2 className="card-title text-base">🔬 为什么选择 Monad？</h2>
+            <p className="text-xs text-base-content/60 mt-1">
               100 个 agent 同时给同一服务商付费 = 热状态冲突。看 Monad 乐观并行执行如何处理 —— 冲突显微镜现场演示
             </p>
           </div>
-          <Link href="/lens" className="btn btn-sm btn-outline btn-primary">
+          <Link href="/lens" className="btn btn-primary btn-sm">
             打开 ParallelLens →
           </Link>
         </div>

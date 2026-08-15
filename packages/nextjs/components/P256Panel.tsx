@@ -10,9 +10,9 @@ const P256_PRECOMPILE = "0x0000000000000000000000000000000000000100" as const;
 const hex = (b: Uint8Array) => Buffer.from(b).toString("hex").padStart(64, "0");
 
 /**
- * P256Panel —— Monad 独占杀招：原生 P256 precompile
+ * P256Panel —— Monad 原生 P256 precompile 能力验证
  * AI agent 的 passkey / Secure Enclave 密钥就是 secp256r1，
- * 别的链验这种签名要几十万 gas，Monad 一次 precompile 调用搞定
+ * precompile 可避免纯 Solidity 验签的高开销
  */
 export const P256Panel = () => {
   const publicClient = usePublicClient();
@@ -58,14 +58,15 @@ export const P256Panel = () => {
   };
 
   return (
-    <div className="card bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary">
+    <div className="card relative">
+      <span className="absolute right-5 top-5 size-2.5 rounded-full bg-accent" />
       <div className="card-body gap-3">
         <h2 className="card-title">
-          🔐 P256 原生验证 <span className="badge badge-primary">Monad 独占</span>
+          🔐 P256 原生验证 <span className="badge badge-primary">Monad 原生</span>
         </h2>
         <p className="text-xs text-base-content/70">
-          AI agent 常用 passkey / Secure Enclave 密钥（secp256r1）。别的链用 Solidity 验这种签名要烧几十万 gas， Monad
-          内置 P256 precompile（RIP-7212）——agent 用设备密钥直接签名确认 Escrow 交付。
+          AI agent 常用 passkey / Secure Enclave 密钥（secp256r1）。Monad 提供 P256 precompile（RIP-7212）；当前面板验证
+          precompile 能力，设备密钥接入 Escrow 仍在 roadmap。
         </p>
         <div className="flex gap-3 items-center flex-wrap">
           <button className="btn btn-sm btn-primary" disabled={busy} onClick={run}>
