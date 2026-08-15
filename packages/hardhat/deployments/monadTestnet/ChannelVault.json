@@ -1,0 +1,440 @@
+{
+  "address": "0x36b45aea8267b0efb232a3a2515240a5c5178523",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "channelId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "cumulativeAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "delta",
+          "type": "uint256"
+        }
+      ],
+      "name": "ChannelClaimed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "channelId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "refunded",
+          "type": "uint256"
+        }
+      ],
+      "name": "ChannelClosed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "channelId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "provider",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "budget",
+          "type": "uint256"
+        }
+      ],
+      "name": "ChannelOpened",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "DOMAIN_SEPARATOR",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "VOUCHER_TYPEHASH",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "channelNonce",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "channels",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "agent",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "provider",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "budget",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "expiry",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "settled",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "closed",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "channelId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "cumulativeAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "v",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "r",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "s",
+          "type": "bytes32"
+        }
+      ],
+      "name": "claim",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "channelId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "closeChannel",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "provider",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "expirySecs",
+          "type": "uint256"
+        }
+      ],
+      "name": "openChannel",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "channelId",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "channelId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "cumulativeAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "voucherDigest",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "contractName": "ChannelVault",
+  "sourceName": "contracts/ChannelVault.sol",
+  "bytecode": "0x60a060405234801561000f575f5ffd5b50604080518082018252601481527f4167656e745061794368616e6e656c5661756c740000000000000000000000006020918201528151808301835260018152603160f81b9082015281517f8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f918101919091527fb3fd7ce6de75b141d4ffb236ab490eba8310a497afd44dd6407cc577c521eeb4918101919091527fc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc660608201524660808201523060a082015260c00160408051601f198184030181529190528051602090910120608052608051610a8d6101185f395f818160e901526109040152610a8d5ff3fe608060405260043610610079575f3560e01c80634c2ee09d1161004c5780634c2ee09d1461010b5780637a7ebd7b1461012a57806394739e87146101c4578063e55aee26146101f7575f5ffd5b80631220ce421461007d57806312921758146100a457806324f453d1146100c55780633644e515146100d8575b5f5ffd5b348015610088575f5ffd5b506100915f5481565b6040519081526020015b60405180910390f35b3480156100af575f5ffd5b506100c36100be36600461094f565b610216565b005b6100916100d3366004610999565b6104ed565b3480156100e3575f5ffd5b506100917f000000000000000000000000000000000000000000000000000000000000000081565b348015610116575f5ffd5b506100c36101253660046109ce565b610694565b348015610135575f5ffd5b5061018a6101443660046109ce565b600160208190525f91825260409091208054918101546002820154600383015460048401546005909401546001600160a01b039586169590931693919290919060ff1686565b604080516001600160a01b0397881681529690951660208701529385019290925260608401526080830152151560a082015260c00161009b565b3480156101cf575f5ffd5b506100917f5e172d4a19b08b5b7f0354399a080f05a28476f34f987f7cd87e69a4065d4ec081565b348015610202575f5ffd5b506100916102113660046109e5565b6108a5565b5f858152600160205260409020600581015460ff16156102745760405162461bcd60e51b815260206004820152601460248201527310da185b9b995b15985d5b1d0e8818db1bdcd95960621b60448201526064015b60405180910390fd5b806004015485116102c75760405162461bcd60e51b815260206004820152601b60248201527f4368616e6e656c5661756c743a207374616c6520766f75636865720000000000604482015260640161026b565b806002015485111561031b5760405162461bcd60e51b815260206004820152601c60248201527f4368616e6e656c5661756c743a20657863656564732062756467657400000000604482015260640161026b565b5f600161032888886108a5565b604080515f8152602081018083529290925260ff881690820152606081018690526080810185905260a0016020604051602081039080840390855afa158015610373573d5f5f3e3d5ffd5b5050604051601f19015183549092506001600160a01b0380841691161490506103ea5760405162461bcd60e51b815260206004820152602360248201527f4368616e6e656c5661756c743a2062616420766f7563686572207369676e617460448201526275726560e81b606482015260840161026b565b5f8260040154876103fb9190610a19565b60048401889055604080518981526020810183905291925089917f7f9ec6f2dac5e7d9747829de0b2d3addb48730f6c883ec3e6a7286ce3975ce5d910160405180910390a260018301546040515f916001600160a01b03169083908381818185875af1925050503d805f811461048c576040519150601f19603f3d011682016040523d82523d5f602084013e610491565b606091505b50509050806104e25760405162461bcd60e51b815260206004820152601d60248201527f4368616e6e656c5661756c743a207472616e73666572206661696c6564000000604482015260640161026b565b505050505050505050565b5f5f341161053d5760405162461bcd60e51b815260206004820152601d60248201527f4368616e6e656c5661756c743a20627564676574207265717569726564000000604482015260640161026b565b33835f5f815461054c90610a2c565b9182905550604080516001600160a01b039485166020820152939092169183019190915260608201526080016040516020818303038152906040528051906020012090506040518060c00160405280336001600160a01b03168152602001846001600160a01b0316815260200134815260200183426105cb9190610a44565b81525f60208083018290526040928301829052848252600180825291839020845181546001600160a01b03199081166001600160a01b0392831617835586840151948301805490911694821694909417909355848401516002820155606085015160038201556080850151600482015560a0909401516005909401805460ff191694151594909417909355905134815290851691339184917f448d27f1fe12f92a2070111296e68fd6ef0a01c0e05bf5819eda0dbcf267bf3d910160405180910390a492915050565b5f81815260016020526040902080546001600160a01b031633146106fa5760405162461bcd60e51b815260206004820152601760248201527f4368616e6e656c5661756c743a206e6f74206167656e74000000000000000000604482015260640161026b565b600581015460ff16156107465760405162461bcd60e51b815260206004820152601460248201527310da185b9b995b15985d5b1d0e8818db1bdcd95960621b604482015260640161026b565b806003015442116107995760405162461bcd60e51b815260206004820152601960248201527f4368616e6e656c5661756c743a206e6f74206578706972656400000000000000604482015260640161026b565b60058101805460ff19166001179055600481015460028201545f916107bd91610a19565b9050827f74e9aa18d6bb2c4887e76896296ce0a296a2e8315bb319b08b7607ff92fbef79826040516107f191815260200190565b60405180910390a280156108a05781546040515f916001600160a01b03169083908381818185875af1925050503d805f8114610848576040519150601f19603f3d011682016040523d82523d5f602084013e61084d565b606091505b505090508061089e5760405162461bcd60e51b815260206004820152601b60248201527f4368616e6e656c5661756c743a20726566756e64206661696c65640000000000604482015260640161026b565b505b505050565b604080517f5e172d4a19b08b5b7f0354399a080f05a28476f34f987f7cd87e69a4065d4ec060208083019190915281830185905260608083018590528351808403909101815260808301845280519082012061190160f01b60a08401527f000000000000000000000000000000000000000000000000000000000000000060a284015260c2808401919091528351808403909101815260e290920190925280519101205b92915050565b5f5f5f5f5f60a08688031215610963575f5ffd5b8535945060208601359350604086013560ff81168114610981575f5ffd5b94979396509394606081013594506080013592915050565b5f5f604083850312156109aa575f5ffd5b82356001600160a01b03811681146109c0575f5ffd5b946020939093013593505050565b5f602082840312156109de575f5ffd5b5035919050565b5f5f604083850312156109f6575f5ffd5b50508035926020909101359150565b634e487b7160e01b5f52601160045260245ffd5b8181038181111561094957610949610a05565b5f60018201610a3d57610a3d610a05565b5060010190565b8082018082111561094957610949610a0556fea26469706673582212207a06b52a3479c0fcdde062165a06ba7ef6f0f4001ec212f7360a514e7c3b5f3b64736f6c634300081e0033",
+  "deployedBytecode": "0x608060405260043610610079575f3560e01c80634c2ee09d1161004c5780634c2ee09d1461010b5780637a7ebd7b1461012a57806394739e87146101c4578063e55aee26146101f7575f5ffd5b80631220ce421461007d57806312921758146100a457806324f453d1146100c55780633644e515146100d8575b5f5ffd5b348015610088575f5ffd5b506100915f5481565b6040519081526020015b60405180910390f35b3480156100af575f5ffd5b506100c36100be36600461094f565b610216565b005b6100916100d3366004610999565b6104ed565b3480156100e3575f5ffd5b506100917f000000000000000000000000000000000000000000000000000000000000000081565b348015610116575f5ffd5b506100c36101253660046109ce565b610694565b348015610135575f5ffd5b5061018a6101443660046109ce565b600160208190525f91825260409091208054918101546002820154600383015460048401546005909401546001600160a01b039586169590931693919290919060ff1686565b604080516001600160a01b0397881681529690951660208701529385019290925260608401526080830152151560a082015260c00161009b565b3480156101cf575f5ffd5b506100917f5e172d4a19b08b5b7f0354399a080f05a28476f34f987f7cd87e69a4065d4ec081565b348015610202575f5ffd5b506100916102113660046109e5565b6108a5565b5f858152600160205260409020600581015460ff16156102745760405162461bcd60e51b815260206004820152601460248201527310da185b9b995b15985d5b1d0e8818db1bdcd95960621b60448201526064015b60405180910390fd5b806004015485116102c75760405162461bcd60e51b815260206004820152601b60248201527f4368616e6e656c5661756c743a207374616c6520766f75636865720000000000604482015260640161026b565b806002015485111561031b5760405162461bcd60e51b815260206004820152601c60248201527f4368616e6e656c5661756c743a20657863656564732062756467657400000000604482015260640161026b565b5f600161032888886108a5565b604080515f8152602081018083529290925260ff881690820152606081018690526080810185905260a0016020604051602081039080840390855afa158015610373573d5f5f3e3d5ffd5b5050604051601f19015183549092506001600160a01b0380841691161490506103ea5760405162461bcd60e51b815260206004820152602360248201527f4368616e6e656c5661756c743a2062616420766f7563686572207369676e617460448201526275726560e81b606482015260840161026b565b5f8260040154876103fb9190610a19565b60048401889055604080518981526020810183905291925089917f7f9ec6f2dac5e7d9747829de0b2d3addb48730f6c883ec3e6a7286ce3975ce5d910160405180910390a260018301546040515f916001600160a01b03169083908381818185875af1925050503d805f811461048c576040519150601f19603f3d011682016040523d82523d5f602084013e610491565b606091505b50509050806104e25760405162461bcd60e51b815260206004820152601d60248201527f4368616e6e656c5661756c743a207472616e73666572206661696c6564000000604482015260640161026b565b505050505050505050565b5f5f341161053d5760405162461bcd60e51b815260206004820152601d60248201527f4368616e6e656c5661756c743a20627564676574207265717569726564000000604482015260640161026b565b33835f5f815461054c90610a2c565b9182905550604080516001600160a01b039485166020820152939092169183019190915260608201526080016040516020818303038152906040528051906020012090506040518060c00160405280336001600160a01b03168152602001846001600160a01b0316815260200134815260200183426105cb9190610a44565b81525f60208083018290526040928301829052848252600180825291839020845181546001600160a01b03199081166001600160a01b0392831617835586840151948301805490911694821694909417909355848401516002820155606085015160038201556080850151600482015560a0909401516005909401805460ff191694151594909417909355905134815290851691339184917f448d27f1fe12f92a2070111296e68fd6ef0a01c0e05bf5819eda0dbcf267bf3d910160405180910390a492915050565b5f81815260016020526040902080546001600160a01b031633146106fa5760405162461bcd60e51b815260206004820152601760248201527f4368616e6e656c5661756c743a206e6f74206167656e74000000000000000000604482015260640161026b565b600581015460ff16156107465760405162461bcd60e51b815260206004820152601460248201527310da185b9b995b15985d5b1d0e8818db1bdcd95960621b604482015260640161026b565b806003015442116107995760405162461bcd60e51b815260206004820152601960248201527f4368616e6e656c5661756c743a206e6f74206578706972656400000000000000604482015260640161026b565b60058101805460ff19166001179055600481015460028201545f916107bd91610a19565b9050827f74e9aa18d6bb2c4887e76896296ce0a296a2e8315bb319b08b7607ff92fbef79826040516107f191815260200190565b60405180910390a280156108a05781546040515f916001600160a01b03169083908381818185875af1925050503d805f8114610848576040519150601f19603f3d011682016040523d82523d5f602084013e61084d565b606091505b505090508061089e5760405162461bcd60e51b815260206004820152601b60248201527f4368616e6e656c5661756c743a20726566756e64206661696c65640000000000604482015260640161026b565b505b505050565b604080517f5e172d4a19b08b5b7f0354399a080f05a28476f34f987f7cd87e69a4065d4ec060208083019190915281830185905260608083018590528351808403909101815260808301845280519082012061190160f01b60a08401527f000000000000000000000000000000000000000000000000000000000000000060a284015260c2808401919091528351808403909101815260e290920190925280519101205b92915050565b5f5f5f5f5f60a08688031215610963575f5ffd5b8535945060208601359350604086013560ff81168114610981575f5ffd5b94979396509394606081013594506080013592915050565b5f5f604083850312156109aa575f5ffd5b82356001600160a01b03811681146109c0575f5ffd5b946020939093013593505050565b5f602082840312156109de575f5ffd5b5035919050565b5f5f604083850312156109f6575f5ffd5b50508035926020909101359150565b634e487b7160e01b5f52601160045260245ffd5b8181038181111561094957610949610a05565b5f60018201610a3d57610a3d610a05565b5060010190565b8082018082111561094957610949610a0556fea26469706673582212207a06b52a3479c0fcdde062165a06ba7ef6f0f4001ec212f7360a514e7c3b5f3b64736f6c634300081e0033",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "immutableReferences": {
+    "923": [
+      {
+        "length": 32,
+        "start": 233
+      },
+      {
+        "length": 32,
+        "start": 2308
+      }
+    ]
+  },
+  "inputSourceName": "project/contracts/ChannelVault.sol",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "evm": {
+    "gasEstimates": {
+      "creation": {
+        "codeDepositCost": "540200",
+        "executionCost": "infinite",
+        "totalCost": "infinite"
+      },
+      "external": {
+        "DOMAIN_SEPARATOR()": "infinite",
+        "VOUCHER_TYPEHASH()": "227",
+        "channelNonce()": "2283",
+        "channels(bytes32)": "13203",
+        "claim(bytes32,uint256,uint8,bytes32,bytes32)": "infinite",
+        "closeChannel(bytes32)": "infinite",
+        "openChannel(address,uint256)": "149456",
+        "voucherDigest(bytes32,uint256)": "infinite"
+      }
+    }
+  },
+  "metadata": "{\"compiler\":{\"version\":\"0.8.30+commit.73712a01\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"channelId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"cumulativeAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"delta\",\"type\":\"uint256\"}],\"name\":\"ChannelClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"channelId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"refunded\",\"type\":\"uint256\"}],\"name\":\"ChannelClosed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"channelId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"agent\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"provider\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"budget\",\"type\":\"uint256\"}],\"name\":\"ChannelOpened\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"DOMAIN_SEPARATOR\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"VOUCHER_TYPEHASH\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"channelNonce\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"channels\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"agent\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"provider\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"budget\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiry\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"settled\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"closed\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"channelId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"cumulativeAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"claim\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"channelId\",\"type\":\"bytes32\"}],\"name\":\"closeChannel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"provider\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"expirySecs\",\"type\":\"uint256\"}],\"name\":\"openChannel\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"channelId\",\"type\":\"bytes32\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"channelId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"cumulativeAmount\",\"type\":\"uint256\"}],\"name\":\"voucherDigest\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"claim(bytes32,uint256,uint8,bytes32,bytes32)\":{\"notice\":\"\\u670d\\u52a1\\u5546\\u63d0\\u4ea4\\u6700\\u540e\\u4e00\\u5f20 voucher \\u7ed3\\u7b97\\uff08\\u53ef\\u591a\\u6b21\\uff0c\\u6bcf\\u6b21\\u6309\\u589e\\u91cf\\u7ed3\\u7b97\\uff09\"},\"closeChannel(bytes32)\":{\"notice\":\"\\u8fc7\\u671f\\u540e agent \\u5173\\u95ed\\u901a\\u9053\\u53d6\\u56de\\u672a\\u6d88\\u8d39\\u4f59\\u989d\"},\"openChannel(address,uint256)\":{\"notice\":\"agent \\u5f00\\u901a\\u9053\\uff0c\\u9501\\u5b9a\\u9884\\u7b97\"},\"voucherDigest(bytes32,uint256)\":{\"notice\":\"\\u5bf9 voucher \\u7684 EIP-712 \\u6458\\u8981\"}},\"notice\":\"ChannelVault \\u2014\\u2014 \\u6309\\u6b21\\u8ba1\\u91cf\\u652f\\u4ed8\\u901a\\u9053\\uff08\\u79bb\\u6563 API \\u8c03\\u7528\\u573a\\u666f\\uff09 agent \\u5f00\\u901a\\u9053\\u9501\\u9884\\u7b97\\uff0c\\u4e4b\\u540e\\u6bcf\\u6b21\\u8c03\\u7528\\u53ea\\u79bb\\u7ebf\\u7b7e\\u4e00\\u5f20 EIP-712 voucher \\uff08\\u91d1\\u989d\\u7d2f\\u8ba1\\u5355\\u8c03\\u9012\\u589e\\uff09\\uff0c\\u670d\\u52a1\\u5546\\u968f\\u65f6\\u62ff\\u3010\\u6700\\u540e\\u4e00\\u5f20\\u3011voucher \\u4e0a\\u94fe\\u6279\\u91cf\\u7ed3\\u7b97\\u3002 \\u4e00\\u4e07\\u6b21\\u8c03\\u7528 = 2 \\u7b14\\u94fe\\u4e0a\\u4ea4\\u6613\\uff08\\u5f00 + \\u7ed3\\uff09\\u3002 \\u8bbe\\u8ba1\\u8bf4\\u660e\\uff1acumulativeAmount \\u5355\\u8c03\\u9012\\u589e\\u5929\\u7136\\u9632\\u91cd\\u653e\\uff0c\\u65e0\\u9700\\u989d\\u5916 nonce\\u3002\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"project/contracts/ChannelVault.sol\":\"ChannelVault\"},\"evmVersion\":\"prague\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"project/contracts/ChannelVault.sol\":{\"content\":\"//SPDX-License-Identifier: MIT\\npragma solidity >=0.8.0 <0.9.0;\\n\\n/**\\n * ChannelVault \\u2014\\u2014 \\u6309\\u6b21\\u8ba1\\u91cf\\u652f\\u4ed8\\u901a\\u9053\\uff08\\u79bb\\u6563 API \\u8c03\\u7528\\u573a\\u666f\\uff09\\n *\\n * agent \\u5f00\\u901a\\u9053\\u9501\\u9884\\u7b97\\uff0c\\u4e4b\\u540e\\u6bcf\\u6b21\\u8c03\\u7528\\u53ea\\u79bb\\u7ebf\\u7b7e\\u4e00\\u5f20 EIP-712 voucher\\n * \\uff08\\u91d1\\u989d\\u7d2f\\u8ba1\\u5355\\u8c03\\u9012\\u589e\\uff09\\uff0c\\u670d\\u52a1\\u5546\\u968f\\u65f6\\u62ff\\u3010\\u6700\\u540e\\u4e00\\u5f20\\u3011voucher \\u4e0a\\u94fe\\u6279\\u91cf\\u7ed3\\u7b97\\u3002\\n * \\u4e00\\u4e07\\u6b21\\u8c03\\u7528 = 2 \\u7b14\\u94fe\\u4e0a\\u4ea4\\u6613\\uff08\\u5f00 + \\u7ed3\\uff09\\u3002\\n *\\n * \\u8bbe\\u8ba1\\u8bf4\\u660e\\uff1acumulativeAmount \\u5355\\u8c03\\u9012\\u589e\\u5929\\u7136\\u9632\\u91cd\\u653e\\uff0c\\u65e0\\u9700\\u989d\\u5916 nonce\\u3002\\n */\\ncontract ChannelVault {\\n    struct Channel {\\n        address agent;\\n        address provider;\\n        uint256 budget; // \\u9501\\u5b9a\\u603b\\u9884\\u7b97\\n        uint256 expiry; // \\u8fc7\\u671f\\u540e agent \\u53ef\\u53d6\\u56de\\u4f59\\u989d\\n        uint256 settled; // \\u5df2\\u7ed3\\u7b97\\u7d2f\\u8ba1\\u989d\\n        bool closed;\\n    }\\n\\n    bytes32 public constant VOUCHER_TYPEHASH = keccak256(\\\"Voucher(bytes32 channelId,uint256 cumulativeAmount)\\\");\\n    bytes32 public immutable DOMAIN_SEPARATOR;\\n\\n    uint256 public channelNonce;\\n    mapping(bytes32 => Channel) public channels;\\n\\n    event ChannelOpened(bytes32 indexed channelId, address indexed agent, address indexed provider, uint256 budget);\\n    event ChannelClaimed(bytes32 indexed channelId, uint256 cumulativeAmount, uint256 delta);\\n    event ChannelClosed(bytes32 indexed channelId, uint256 refunded);\\n\\n    constructor() {\\n        DOMAIN_SEPARATOR = keccak256(\\n            abi.encode(\\n                keccak256(\\\"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)\\\"),\\n                keccak256(bytes(\\\"AgentPayChannelVault\\\")),\\n                keccak256(bytes(\\\"1\\\")),\\n                block.chainid,\\n                address(this)\\n            )\\n        );\\n    }\\n\\n    /// agent \\u5f00\\u901a\\u9053\\uff0c\\u9501\\u5b9a\\u9884\\u7b97\\n    function openChannel(address provider, uint256 expirySecs) external payable returns (bytes32 channelId) {\\n        require(msg.value > 0, \\\"ChannelVault: budget required\\\");\\n        channelId = keccak256(abi.encode(msg.sender, provider, ++channelNonce));\\n        channels[channelId] = Channel({\\n            agent: msg.sender,\\n            provider: provider,\\n            budget: msg.value,\\n            expiry: block.timestamp + expirySecs,\\n            settled: 0,\\n            closed: false\\n        });\\n        emit ChannelOpened(channelId, msg.sender, provider, msg.value);\\n    }\\n\\n    /// \\u5bf9 voucher \\u7684 EIP-712 \\u6458\\u8981\\n    function voucherDigest(bytes32 channelId, uint256 cumulativeAmount) public view returns (bytes32) {\\n        return keccak256(\\n            abi.encodePacked(\\\"\\\\x19\\\\x01\\\", DOMAIN_SEPARATOR, keccak256(abi.encode(VOUCHER_TYPEHASH, channelId, cumulativeAmount)))\\n        );\\n    }\\n\\n    /// \\u670d\\u52a1\\u5546\\u63d0\\u4ea4\\u6700\\u540e\\u4e00\\u5f20 voucher \\u7ed3\\u7b97\\uff08\\u53ef\\u591a\\u6b21\\uff0c\\u6bcf\\u6b21\\u6309\\u589e\\u91cf\\u7ed3\\u7b97\\uff09\\n    function claim(bytes32 channelId, uint256 cumulativeAmount, uint8 v, bytes32 r, bytes32 s) external {\\n        Channel storage c = channels[channelId];\\n        require(!c.closed, \\\"ChannelVault: closed\\\");\\n        require(cumulativeAmount > c.settled, \\\"ChannelVault: stale voucher\\\");\\n        require(cumulativeAmount <= c.budget, \\\"ChannelVault: exceeds budget\\\");\\n\\n        address signer = ecrecover(voucherDigest(channelId, cumulativeAmount), v, r, s);\\n        require(signer == c.agent, \\\"ChannelVault: bad voucher signature\\\");\\n\\n        uint256 delta = cumulativeAmount - c.settled;\\n        c.settled = cumulativeAmount;\\n        emit ChannelClaimed(channelId, cumulativeAmount, delta);\\n        (bool ok,) = c.provider.call{ value: delta }(\\\"\\\");\\n        require(ok, \\\"ChannelVault: transfer failed\\\");\\n    }\\n\\n    /// \\u8fc7\\u671f\\u540e agent \\u5173\\u95ed\\u901a\\u9053\\u53d6\\u56de\\u672a\\u6d88\\u8d39\\u4f59\\u989d\\n    function closeChannel(bytes32 channelId) external {\\n        Channel storage c = channels[channelId];\\n        require(msg.sender == c.agent, \\\"ChannelVault: not agent\\\");\\n        require(!c.closed, \\\"ChannelVault: closed\\\");\\n        require(block.timestamp > c.expiry, \\\"ChannelVault: not expired\\\");\\n        c.closed = true;\\n        uint256 refund = c.budget - c.settled;\\n        emit ChannelClosed(channelId, refund);\\n        if (refund > 0) {\\n            (bool ok,) = c.agent.call{ value: refund }(\\\"\\\");\\n            require(ok, \\\"ChannelVault: refund failed\\\");\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x5c7a8148af42aa169d09c768553d9037f7614dbf18c96d632ce60e5242e9c4d0\",\"license\":\"MIT\"}},\"version\":1}",
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 925,
+        "contract": "project/contracts/ChannelVault.sol:ChannelVault",
+        "label": "channelNonce",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 930,
+        "contract": "project/contracts/ChannelVault.sol:ChannelVault",
+        "label": "channels",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_bytes32,t_struct(Channel)916_storage)"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_mapping(t_bytes32,t_struct(Channel)916_storage)": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => struct ChannelVault.Channel)",
+        "numberOfBytes": "32",
+        "value": "t_struct(Channel)916_storage"
+      },
+      "t_struct(Channel)916_storage": {
+        "encoding": "inplace",
+        "label": "struct ChannelVault.Channel",
+        "members": [
+          {
+            "astId": 905,
+            "contract": "project/contracts/ChannelVault.sol:ChannelVault",
+            "label": "agent",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address"
+          },
+          {
+            "astId": 907,
+            "contract": "project/contracts/ChannelVault.sol:ChannelVault",
+            "label": "provider",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address"
+          },
+          {
+            "astId": 909,
+            "contract": "project/contracts/ChannelVault.sol:ChannelVault",
+            "label": "budget",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 911,
+            "contract": "project/contracts/ChannelVault.sol:ChannelVault",
+            "label": "expiry",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 913,
+            "contract": "project/contracts/ChannelVault.sol:ChannelVault",
+            "label": "settled",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 915,
+            "contract": "project/contracts/ChannelVault.sol:ChannelVault",
+            "label": "closed",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_bool"
+          }
+        ],
+        "numberOfBytes": "192"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "claim(bytes32,uint256,uint8,bytes32,bytes32)": {
+        "notice": "服务商提交最后一张 voucher 结算（可多次，每次按增量结算）"
+      },
+      "closeChannel(bytes32)": {
+        "notice": "过期后 agent 关闭通道取回未消费余额"
+      },
+      "openChannel(address,uint256)": {
+        "notice": "agent 开通道，锁定预算"
+      },
+      "voucherDigest(bytes32,uint256)": {
+        "notice": "对 voucher 的 EIP-712 摘要"
+      }
+    },
+    "notice": "ChannelVault —— 按次计量支付通道（离散 API 调用场景） agent 开通道锁预算，之后每次调用只离线签一张 EIP-712 voucher （金额累计单调递增），服务商随时拿【最后一张】voucher 上链批量结算。 一万次调用 = 2 笔链上交易（开 + 结）。 设计说明：cumulativeAmount 单调递增天然防重放，无需额外 nonce。",
+    "version": 1
+  },
+  "argsData": "0x",
+  "transaction": {
+    "nonce": "0x3",
+    "hash": "0xd8ea6bf89c714a93dae0cfbe3e81893244963f11c6632f98139bd1524e44af02",
+    "origin": "0xd198407729c779aa994ffa9ef10daae2ae523252"
+  },
+  "receipt": {
+    "blockHash": "0xd0340616fa1dd03e5486ace41deecc1f04631f3932fca732c2959bfa0670c444",
+    "blockNumber": "0x33597de",
+    "transactionIndex": "0x1"
+  }
+}

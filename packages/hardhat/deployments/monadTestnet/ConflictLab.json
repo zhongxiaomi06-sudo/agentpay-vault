@@ -1,0 +1,267 @@
+{
+  "address": "0xe4ef366c5c5ad646c8c044a3ab579b32c1cc447e",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "who",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "hotSlot",
+          "type": "uint256"
+        }
+      ],
+      "name": "Bumped",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "who",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "hotSlot",
+          "type": "uint256"
+        }
+      ],
+      "name": "Deposited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "hotSlot",
+          "type": "uint256"
+        }
+      ],
+      "name": "TransferExecuted",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "bump",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "deposit",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "hotCounter",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalTransfers",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "contractName": "ConflictLab",
+  "sourceName": "contracts/ConflictLab.sol",
+  "bytecode": "0x6080604052348015600e575f5ffd5b50335f9081526020819052604090206103e890556103e08061002f5f395ff3fe608060405260043610610054575f3560e01c80633bf47720146100585780635f882c331461007f57806368110b2f1461009457806370a08231146100aa578063a9059cbb146100d5578063d0e30db0146100f4575b5f5ffd5b348015610063575f5ffd5b5061006d60025481565b60405190815260200160405180910390f35b34801561008a575f5ffd5b5061006d60015481565b34801561009f575f5ffd5b506100a86100fc565b005b3480156100b5575f5ffd5b5061006d6100c436600461030a565b5f6020819052908152604090205481565b3480156100e0575f5ffd5b506100a86100ef36600461032a565b61014b565b6100a861027c565b60018054905f61010b83610366565b909155505060015460405190815233907f5311a32e1bc07c65f9f3c57e845d29af6c46065a94add70de6af009b370c3389906020015b60405180910390a2565b335f908152602081905260409020548111156101b75760405162461bcd60e51b815260206004820152602160248201527f436f6e666c6963744c61623a20696e73756666696369656e742062616c616e636044820152606560f81b606482015260840160405180910390fd5b335f90815260208190526040812080548392906101d590849061037e565b90915550506001600160a01b0382165f9081526020819052604081208054839290610201908490610397565b909155505060018054905f61021583610366565b909155505060028054905f61022983610366565b90915550506001546040805183815260208101929092526001600160a01b0384169133917f8e386ea29f37964fdbdb87193d773dea74e258b0f6108461c88c712051fb27bc910160405180910390a35050565b335f908152602081905260408120805434929061029a908490610397565b909155505060018054905f6102ae83610366565b909155505060015460405133917f73a19dd210f1a7f902193214c0ee91dd35ee5b4d920cba8d519eca65a7b488ca9161014191348252602082015260400190565b80356001600160a01b0381168114610305575f5ffd5b919050565b5f6020828403121561031a575f5ffd5b610323826102ef565b9392505050565b5f5f6040838503121561033b575f5ffd5b610344836102ef565b946020939093013593505050565b634e487b7160e01b5f52601160045260245ffd5b5f6001820161037757610377610352565b5060010190565b8181038181111561039157610391610352565b92915050565b808201808211156103915761039161035256fea26469706673582212201c3418895ce2a555e7d959f22733e6e10f6d6f279a147ecd84a5d59a4fd4d13164736f6c634300081e0033",
+  "deployedBytecode": "0x608060405260043610610054575f3560e01c80633bf47720146100585780635f882c331461007f57806368110b2f1461009457806370a08231146100aa578063a9059cbb146100d5578063d0e30db0146100f4575b5f5ffd5b348015610063575f5ffd5b5061006d60025481565b60405190815260200160405180910390f35b34801561008a575f5ffd5b5061006d60015481565b34801561009f575f5ffd5b506100a86100fc565b005b3480156100b5575f5ffd5b5061006d6100c436600461030a565b5f6020819052908152604090205481565b3480156100e0575f5ffd5b506100a86100ef36600461032a565b61014b565b6100a861027c565b60018054905f61010b83610366565b909155505060015460405190815233907f5311a32e1bc07c65f9f3c57e845d29af6c46065a94add70de6af009b370c3389906020015b60405180910390a2565b335f908152602081905260409020548111156101b75760405162461bcd60e51b815260206004820152602160248201527f436f6e666c6963744c61623a20696e73756666696369656e742062616c616e636044820152606560f81b606482015260840160405180910390fd5b335f90815260208190526040812080548392906101d590849061037e565b90915550506001600160a01b0382165f9081526020819052604081208054839290610201908490610397565b909155505060018054905f61021583610366565b909155505060028054905f61022983610366565b90915550506001546040805183815260208101929092526001600160a01b0384169133917f8e386ea29f37964fdbdb87193d773dea74e258b0f6108461c88c712051fb27bc910160405180910390a35050565b335f908152602081905260408120805434929061029a908490610397565b909155505060018054905f6102ae83610366565b909155505060015460405133917f73a19dd210f1a7f902193214c0ee91dd35ee5b4d920cba8d519eca65a7b488ca9161014191348252602082015260400190565b80356001600160a01b0381168114610305575f5ffd5b919050565b5f6020828403121561031a575f5ffd5b610323826102ef565b9392505050565b5f5f6040838503121561033b575f5ffd5b610344836102ef565b946020939093013593505050565b634e487b7160e01b5f52601160045260245ffd5b5f6001820161037757610377610352565b5060010190565b8181038181111561039157610391610352565b92915050565b808201808211156103915761039161035256fea26469706673582212201c3418895ce2a555e7d959f22733e6e10f6d6f279a147ecd84a5d59a4fd4d13164736f6c634300081e0033",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "immutableReferences": {},
+  "inputSourceName": "project/contracts/ConflictLab.sol",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "evm": {
+    "gasEstimates": {
+      "creation": {
+        "codeDepositCost": "198400",
+        "executionCost": "22415",
+        "totalCost": "220815"
+      },
+      "external": {
+        "balanceOf(address)": "2551",
+        "bump()": "27990",
+        "deposit()": "52691",
+        "hotCounter()": "2282",
+        "totalTransfers()": "2260",
+        "transfer(address,uint256)": "infinite"
+      }
+    }
+  },
+  "metadata": "{\"compiler\":{\"version\":\"0.8.30+commit.73712a01\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"who\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"hotSlot\",\"type\":\"uint256\"}],\"name\":\"Bumped\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"who\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"hotSlot\",\"type\":\"uint256\"}],\"name\":\"Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"hotSlot\",\"type\":\"uint256\"}],\"name\":\"TransferExecuted\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bump\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"hotCounter\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalTransfers\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"bump()\":{\"notice\":\"\\u53ea\\u78b0\\u70ed\\u8ba1\\u6570\\u5668 \\u2014\\u2014 \\u5236\\u9020\\\"\\u7eaf\\u70ed\\u72b6\\u6001\\u51b2\\u7a81\\\"\\u7684\\u6700\\u5c0f\\u4ea4\\u6613\"},\"deposit()\":{\"notice\":\"\\u5145\\u503c\\uff08\\u4ed8\\u771f MON \\u6216\\u8bb0\\u8d26\\u90fd\\u884c\\uff09\"},\"transfer(address,uint256)\":{\"notice\":\"\\u8f6c\\u8d26 \\u2014\\u2014 \\u8bfb\\u5199 balanceOf[\\u53cc\\u65b9] + hotCounter\\uff0c\\u5178\\u578b\\u7684\\u72b6\\u6001\\u51b2\\u7a81\\u4ea4\\u6613\"}},\"notice\":\"ConflictLab \\u2014 ParallelLens \\u7684\\u94fe\\u4e0a\\u5b9e\\u9a8c\\u53f0 \\u6545\\u610f\\u5236\\u9020\\\"\\u70ed\\u72b6\\u6001\\\"\\uff1a\\u6240\\u6709\\u4ea4\\u6613\\u90fd\\u8bfb\\u5199\\u5171\\u4eab\\u8d26\\u672c + \\u5168\\u5c40\\u8ba1\\u6570\\u5668\\uff0c \\u7528\\u4e8e\\u6f14\\u793a/\\u6d4b\\u91cf Monad \\u4e50\\u89c2\\u5e76\\u884c\\u6267\\u884c\\u4e0b\\u7684\\u72b6\\u6001\\u51b2\\u7a81\\u4e0e\\u91cd\\u6267\\u884c\\u3002\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"project/contracts/ConflictLab.sol\":\"ConflictLab\"},\"evmVersion\":\"prague\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\"project/:hardhat/=npm/hardhat@3.4.5/\"]},\"sources\":{\"project/contracts/ConflictLab.sol\":{\"content\":\"//SPDX-License-Identifier: MIT\\npragma solidity >=0.8.0 <0.9.0;\\n\\n/**\\n * ConflictLab \\u2014 ParallelLens \\u7684\\u94fe\\u4e0a\\u5b9e\\u9a8c\\u53f0\\n * \\u6545\\u610f\\u5236\\u9020\\\"\\u70ed\\u72b6\\u6001\\\"\\uff1a\\u6240\\u6709\\u4ea4\\u6613\\u90fd\\u8bfb\\u5199\\u5171\\u4eab\\u8d26\\u672c + \\u5168\\u5c40\\u8ba1\\u6570\\u5668\\uff0c\\n * \\u7528\\u4e8e\\u6f14\\u793a/\\u6d4b\\u91cf Monad \\u4e50\\u89c2\\u5e76\\u884c\\u6267\\u884c\\u4e0b\\u7684\\u72b6\\u6001\\u51b2\\u7a81\\u4e0e\\u91cd\\u6267\\u884c\\u3002\\n */\\ncontract ConflictLab {\\n    mapping(address => uint256) public balanceOf;\\n    // \\u6bcf\\u7b14\\u4ea4\\u6613\\u90fd\\u4f1a\\u5199\\u7684\\u5168\\u5c40\\u70ed\\u8ba1\\u6570\\u5668 \\u2014\\u2014 \\u5e76\\u884c\\u6267\\u884c\\u65f6\\u7684\\u51b2\\u7a81\\u5236\\u9020\\u673a\\n    uint256 public hotCounter;\\n    // \\u8bb0\\u5f55\\u603b\\u5171\\u53d1\\u751f\\u8fc7\\u591a\\u5c11\\u7b14\\u8f6c\\u8d26\\n    uint256 public totalTransfers;\\n\\n    event TransferExecuted(address indexed from, address indexed to, uint256 amount, uint256 hotSlot);\\n    event Deposited(address indexed who, uint256 amount, uint256 hotSlot);\\n    event Bumped(address indexed who, uint256 hotSlot);\\n\\n    constructor() {\\n        // \\u7ed9\\u90e8\\u7f72\\u8005\\u9884\\u5b58 1000\\uff0c\\u590d\\u523b Monad101 \\u8bb2\\u5ea7\\u91cc Alice \\u8d77\\u59cb $1000 \\u7684\\u6848\\u4f8b\\n        balanceOf[msg.sender] = 1000;\\n    }\\n\\n    /// \\u5145\\u503c\\uff08\\u4ed8\\u771f MON \\u6216\\u8bb0\\u8d26\\u90fd\\u884c\\uff09\\n    function deposit() external payable {\\n        balanceOf[msg.sender] += msg.value;\\n        hotCounter++;\\n        emit Deposited(msg.sender, msg.value, hotCounter);\\n    }\\n\\n    /// \\u8f6c\\u8d26 \\u2014\\u2014 \\u8bfb\\u5199 balanceOf[\\u53cc\\u65b9] + hotCounter\\uff0c\\u5178\\u578b\\u7684\\u72b6\\u6001\\u51b2\\u7a81\\u4ea4\\u6613\\n    function transfer(address to, uint256 amount) external {\\n        require(balanceOf[msg.sender] >= amount, \\\"ConflictLab: insufficient balance\\\");\\n        balanceOf[msg.sender] -= amount;\\n        balanceOf[to] += amount;\\n        hotCounter++;\\n        totalTransfers++;\\n        emit TransferExecuted(msg.sender, to, amount, hotCounter);\\n    }\\n\\n    /// \\u53ea\\u78b0\\u70ed\\u8ba1\\u6570\\u5668 \\u2014\\u2014 \\u5236\\u9020\\\"\\u7eaf\\u70ed\\u72b6\\u6001\\u51b2\\u7a81\\\"\\u7684\\u6700\\u5c0f\\u4ea4\\u6613\\n    function bump() external {\\n        hotCounter++;\\n        emit Bumped(msg.sender, hotCounter);\\n    }\\n}\\n\",\"keccak256\":\"0xc537e215fdd7af05b0c83bf6f43f883399189258186057599ecd3449a893efb6\",\"license\":\"MIT\"}},\"version\":1}",
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 8091,
+        "contract": "project/contracts/ConflictLab.sol:ConflictLab",
+        "label": "balanceOf",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 8093,
+        "contract": "project/contracts/ConflictLab.sol:ConflictLab",
+        "label": "hotCounter",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 8095,
+        "contract": "project/contracts/ConflictLab.sol:ConflictLab",
+        "label": "totalTransfers",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_uint256"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "bump()": {
+        "notice": "只碰热计数器 —— 制造\"纯热状态冲突\"的最小交易"
+      },
+      "deposit()": {
+        "notice": "充值（付真 MON 或记账都行）"
+      },
+      "transfer(address,uint256)": {
+        "notice": "转账 —— 读写 balanceOf[双方] + hotCounter，典型的状态冲突交易"
+      }
+    },
+    "notice": "ConflictLab — ParallelLens 的链上实验台 故意制造\"热状态\"：所有交易都读写共享账本 + 全局计数器， 用于演示/测量 Monad 乐观并行执行下的状态冲突与重执行。",
+    "version": 1
+  },
+  "argsData": "0x",
+  "transaction": {
+    "nonce": "0x1",
+    "hash": "0xd6e386ea3db151aa5e9d3b364d8f978fc6949df1d1063589a4cebe4205ec1068",
+    "origin": "0xd198407729c779aa994ffa9ef10daae2ae523252"
+  },
+  "receipt": {
+    "blockHash": "0xcf7bd17e1cd31713c59bffce28e18c0b56b153733922621d46711c4857b6f72e",
+    "blockNumber": "0x33597cd",
+    "transactionIndex": "0x1"
+  }
+}
