@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatEther, keccak256, parseEther, parseSignature, toBytes, zeroAddress } from "viem";
-import { useAccount, usePublicClient, useSignTypedData } from "wagmi";
+import { useAccount, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { getFriendlyTransactionError, getReceiptEventArg, notification } from "~~/utils/scaffold-eth";
@@ -68,10 +68,8 @@ export const StreamCard = () => {
     args: [streamId],
   });
 
-  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
+  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault", disableSimulate: true });
   const { data: vaultInfo } = useDeployedContractInfo({ contractName: "AgentPayVault" });
-  const { targetNetwork } = useTargetNetwork();
-  const publicClient = usePublicClient({ chainId: targetNetwork.id });
 
   // viem 返回 struct 为位置数组，用 structAt 归一化
   const s = structAt<StreamStruct>(streamRaw, STREAM_KEYS);
@@ -119,14 +117,22 @@ export const StreamCard = () => {
             disabled={busy}
             onClick={() =>
               act(async () => {
-                if (!publicClient || !vaultInfo) throw new Error("Monad RPC 或合约信息尚未就绪");
-                const hash = await writeContractAsync({
-                  functionName: "openStream",
-                  args: [address!, parseEther(rate)],
-                  value: parseEther(deposit),
-                });
-                const receipt = await publicClient.getTransactionReceipt({ hash });
-                setStreamId(getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "StreamOpened", "id"));
+                if (!vaultInfo) throw new Error("合约信息尚未就绪");
+                let createdId: bigint | undefined;
+                await writeContractAsync(
+                  {
+                    functionName: "openStream",
+                    args: [address!, parseEther(rate)],
+                    value: parseEther(deposit),
+                  },
+                  {
+                    onBlockConfirmation: receipt => {
+                      createdId = getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "StreamOpened", "id");
+                    },
+                  },
+                );
+                if (!createdId) throw new Error("交易已确认，但未读取到 Stream ID");
+                setStreamId(createdId);
               }, "金库已开启，开始流式计费！")
             }
           >
@@ -207,10 +213,9 @@ export const PlanCard = () => {
     args: [planId, address],
   });
 
-  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
+  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault", disableSimulate: true });
   const { data: vaultInfo } = useDeployedContractInfo({ contractName: "AgentPayVault" });
   const { targetNetwork } = useTargetNetwork();
-  const publicClient = usePublicClient({ chainId: targetNetwork.id });
   const { signTypedDataAsync } = useSignTypedData();
 
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
@@ -288,10 +293,18 @@ export const PlanCard = () => {
             disabled={busy}
             onClick={() =>
               act(async () => {
-                if (!publicClient || !vaultInfo) throw new Error("Monad RPC 或合约信息尚未就绪");
-                const hash = await writeContractAsync({ functionName: "createPlan", args: [parseEther(price)] });
-                const receipt = await publicClient.getTransactionReceipt({ hash });
-                setPlanId(getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "PlanCreated", "planId"));
+                if (!vaultInfo) throw new Error("合约信息尚未就绪");
+                let createdId: bigint | undefined;
+                await writeContractAsync(
+                  { functionName: "createPlan", args: [parseEther(price)] },
+                  {
+                    onBlockConfirmation: receipt => {
+                      createdId = getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "PlanCreated", "planId");
+                    },
+                  },
+                );
+                if (!createdId) throw new Error("交易已确认，但未读取到 Plan ID");
+                setPlanId(createdId);
               }, `服务已挂单：${price} MON/次`)
             }
           >
@@ -376,10 +389,8 @@ export const EscrowCard = () => {
   const e = structAt<EscrowStruct>(escrowRaw, ESCROW_KEYS);
   const STATUS = ["🔒 已锁定", "📦 已交付·争议窗口", "✅ 已释放/已取款", "↩️ 已退款", "⚖️ 争议 50/50"];
 
-  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
+  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault", disableSimulate: true });
   const { data: vaultInfo } = useDeployedContractInfo({ contractName: "AgentPayVault" });
-  const { targetNetwork } = useTargetNetwork();
-  const publicClient = usePublicClient({ chainId: targetNetwork.id });
 
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
     if (!address) return notification.error("请先连接钱包");
@@ -421,14 +432,22 @@ export const EscrowCard = () => {
             disabled={busy}
             onClick={() =>
               act(async () => {
-                if (!publicClient || !vaultInfo) throw new Error("Monad RPC 或合约信息尚未就绪");
-                const hash = await writeContractAsync({
-                  functionName: "lockEscrow",
-                  args: [address!, DEMO_RESULT_HASH, 600n, 60n, zeroAddress],
-                  value: parseEther(amount),
-                });
-                const receipt = await publicClient.getTransactionReceipt({ hash });
-                setEscrowId(getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "EscrowLocked", "id"));
+                if (!vaultInfo) throw new Error("合约信息尚未就绪");
+                let createdId: bigint | undefined;
+                await writeContractAsync(
+                  {
+                    functionName: "lockEscrow",
+                    args: [address!, DEMO_RESULT_HASH, 600n, 60n, zeroAddress],
+                    value: parseEther(amount),
+                  },
+                  {
+                    onBlockConfirmation: receipt => {
+                      createdId = getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "EscrowLocked", "id");
+                    },
+                  },
+                );
+                if (!createdId) throw new Error("交易已确认，但未读取到 Escrow ID");
+                setEscrowId(createdId);
               }, "资金已锁定（交付期 10 分钟 + 争议窗口 60 秒）")
             }
           >

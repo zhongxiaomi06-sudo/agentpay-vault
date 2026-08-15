@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatEther, parseEther, parseSignature } from "viem";
-import { useAccount, usePublicClient, useSignTypedData } from "wagmi";
+import { useAccount, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { getFriendlyTransactionError, getReceiptEventArg, notification } from "~~/utils/scaffold-eth";
@@ -29,7 +29,6 @@ export const ChannelCard = () => {
   const { address } = useAccount();
   const { targetNetwork } = useTargetNetwork();
   const { data: deployed } = useDeployedContractInfo({ contractName: "ChannelVault" });
-  const publicClient = usePublicClient({ chainId: targetNetwork.id });
   const [budget] = useState("0.01");
   const [busy, setBusy] = useState(false);
   const [channelId, setChannelId] = useState<`0x${string}` | null>(null);
@@ -43,20 +42,27 @@ export const ChannelCard = () => {
   });
   const ch = structAt<ChannelStruct>(channelRaw, CHANNEL_KEYS);
 
-  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "ChannelVault" });
+  const { writeContractAsync } = useScaffoldWriteContract({ contractName: "ChannelVault", disableSimulate: true });
   const { signTypedDataAsync } = useSignTypedData();
 
   const open = async () => {
-    if (!address || !deployed || !publicClient) return notification.error("钱包、RPC 或合约信息尚未就绪");
+    if (!address || !deployed) return notification.error("钱包或合约信息尚未就绪");
     setBusy(true);
     try {
-      const hash = await writeContractAsync({
-        functionName: "openChannel",
-        args: [address, 3600n],
-        value: parseEther(budget),
-      });
-      const receipt = await publicClient.getTransactionReceipt({ hash });
-      const id = getReceiptEventArg<`0x${string}`>(receipt, deployed.abi, "ChannelOpened", "channelId");
+      let id: `0x${string}` | undefined;
+      await writeContractAsync(
+        {
+          functionName: "openChannel",
+          args: [address, 3600n],
+          value: parseEther(budget),
+        },
+        {
+          onBlockConfirmation: receipt => {
+            id = getReceiptEventArg<`0x${string}`>(receipt, deployed.abi, "ChannelOpened", "channelId");
+          },
+        },
+      );
+      if (!id) throw new Error("交易已确认，但未读取到 Channel ID");
       setChannelId(id);
       setCallCount(0);
       setLatestVoucher(null);
