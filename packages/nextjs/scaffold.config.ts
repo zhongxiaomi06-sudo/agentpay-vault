@@ -42,7 +42,8 @@ const scaffoldConfig = {
   // - "localOnly": only show when all target networks are local (hardhat/anvil)
   // - "allNetworks": show on any configured target networks
   // - "disabled": completely disable
-  burnerWalletMode: "localNetworksOnly",
+  // 演示保险：测试网上也启用 burner 钱包——MetaMask 掉链子时页面内直接点
+  burnerWalletMode: "allNetworks",
 } as const satisfies ScaffoldConfig;
 
 export default scaffoldConfig;
