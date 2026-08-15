@@ -6,6 +6,7 @@ import scaffoldConfig, { DEFAULT_ALCHEMY_API_KEY, ScaffoldConfig } from "~~/scaf
 import { getAlchemyHttpUrl } from "~~/utils/scaffold-eth";
 
 const { targetNetworks } = scaffoldConfig;
+const monadHttp = (url?: string) => http(url, { batch: { batchSize: 10, wait: 25 }, retryCount: 0, timeout: 12_000 });
 
 // We always want to have mainnet enabled (ENS resolution, ETH price, etc). But only once.
 export const enabledChains = targetNetworks.find((network: Chain) => network.id === 1)
@@ -19,13 +20,20 @@ export const wagmiConfig = createConfig({
   client({ chain }) {
     // Extra fallback for mainnet.
     const mainnetFallbackWithDefaultRPC = [http("https://mainnet.rpc.buidlguidl.com")];
-    let rpcFallbacks = [...(chain.id === mainnet.id ? mainnetFallbackWithDefaultRPC : []), http()];
+    let rpcFallbacks = [
+      ...(chain.id === mainnet.id ? mainnetFallbackWithDefaultRPC : []),
+      chain.id === 10143 ? monadHttp() : http(),
+    ];
 
     const rpcOverrideUrl = (scaffoldConfig.rpcOverrides as ScaffoldConfig["rpcOverrides"])?.[chain.id];
 
     if (rpcOverrideUrl) {
-      const monadFallbacks = chain.id === 10143 ? [http("https://rpc.ankr.com/monad_testnet")] : [];
-      rpcFallbacks = [http(rpcOverrideUrl), ...monadFallbacks, ...rpcFallbacks];
+      const monadFallbacks = chain.id === 10143 ? [monadHttp("https://monad-testnet.drpc.org")] : [];
+      rpcFallbacks = [
+        chain.id === 10143 ? monadHttp(rpcOverrideUrl) : http(rpcOverrideUrl),
+        ...monadFallbacks,
+        ...rpcFallbacks,
+      ];
     } else {
       const alchemyHttpUrl = getAlchemyHttpUrl(chain.id);
       if (alchemyHttpUrl) {
@@ -39,7 +47,7 @@ export const wagmiConfig = createConfig({
 
     return createClient({
       chain,
-      transport: fallback(rpcFallbacks),
+      transport: fallback(rpcFallbacks, { retryCount: 0 }),
       ...(chain.id !== (hardhat as Chain).id
         ? {
             pollingInterval: scaffoldConfig.pollingInterval,

@@ -29,14 +29,14 @@ const ABI = [
 ] as const;
 
 const preferredRpc =
-  process.env.MONAD_RPC_URL || process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://monad-testnet.drpc.org";
+  process.env.MONAD_RPC_URL || process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://rpc.ankr.com/monad_testnet";
+const rpc = (url: string) => http(url, { batch: { batchSize: 10, wait: 25 }, retryCount: 0, timeout: 12_000 });
 const pub = createPublicClient({
   chain: monadTestnet,
-  transport: fallback([
-    http(preferredRpc),
-    http("https://rpc.ankr.com/monad_testnet"),
-    http("https://testnet-rpc.monad.xyz"),
-  ]),
+  transport: fallback(
+    [rpc(preferredRpc), rpc("https://monad-testnet.drpc.org"), rpc("https://testnet-rpc.monad.xyz")],
+    { retryCount: 0 },
+  ),
 });
 
 const json = (body: unknown, status = 200) =>
