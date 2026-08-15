@@ -42,17 +42,28 @@ if (hasConnect > 0) {
   log("burner 已自动连接 ✓");
 }
 
-// 取 burner 地址（wagmi v2 persist 把 Map 序列化为 {__type:"Map",value:[[k,v]]}）
-const burnerState = await page.evaluate(() => {
+// 取 burner 地址：直接读 burnerWallet.pk（connector 存的就是私钥），兜底再翻 wagmi.store
+let burnerState = { address: null, chainId: 10143 };
+for (let i = 0; i < 20 && !burnerState.address; i++) {
+  burnerState = await page.evaluate(() => {
+    const pk = localStorage.getItem("burnerWallet.pk");
+    if (pk) return { address: pk, chainId: 10143, isPk: true };
+    return (() => {
   const store = JSON.parse(localStorage.getItem("wagmi.store") ?? "{}");
   const conns = store?.state?.connections;
   if (conns?.__type === "Map") {
     const first = conns.value?.[0]?.[1];
     return { address: first?.accounts?.[0] ?? null, chainId: first?.chainId ?? store?.state?.chainId };
   }
-  return { address: null, chainId: null };
-});
-const burnerAddress = burnerState.address;
+    return { address: null, chainId: null };
+  })();
+  });
+  if (!burnerState.address) await page.waitForTimeout(500);
+}
+// pk → 地址
+const burnerAddress = burnerState.isPk
+  ? (await import("viem/accounts")).privateKeyToAccount(burnerState.address).address
+  : burnerState.address;
 log(`burner 地址: ${burnerAddress} (chainId=${burnerState.chainId})`);
 if (!burnerAddress) throw new Error("burner 连接失败");
 
@@ -119,8 +130,8 @@ await shot("03-stream-withdrawn");
 log("第二幕：meter 按次计量");
 await clickTx("挂单");
 await clickTx("订阅");
-await clickTx("调用付费 API", 15000);
-await clickTx("调用付费 API", 15000);
+await clickTx("签名并计量", 15000);
+await clickTx("签名并计量", 15000);
 await shot("04-meter");
 
 // ---- 通道 ----

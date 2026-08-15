@@ -61,7 +61,10 @@ export const StreamCard = () => {
     return () => clearInterval(t);
   }, []);
 
-  const { data: streamCount } = useScaffoldReadContract({ contractName: "AgentPayVault", functionName: "streamCount" });
+  const { data: streamCount, refetch: refetchStreamCount } = useScaffoldReadContract({
+    contractName: "AgentPayVault",
+    functionName: "streamCount",
+  });
   const latestId = streamCount ? BigInt(streamCount.toString()) : 0n;
 
   const { data: streamRaw } = useScaffoldReadContract({
@@ -122,7 +125,7 @@ export const StreamCard = () => {
                     functionName: "openStream",
                     args: [address!, parseEther(rate)],
                     value: parseEther(deposit),
-                  }),
+                  }).then(() => refetchStreamCount()),
                 "金库已开启，开始流式计费！",
               )
             }
@@ -185,8 +188,12 @@ export const PlanCard = () => {
   const [calls, setCalls] = useState("10");
   const [busy, setBusy] = useState(false);
 
-  const { data: planCount } = useScaffoldReadContract({ contractName: "AgentPayVault", functionName: "planCount" });
-  const latestPlan = planCount && planCount > 0n ? planCount : 0n;
+  const { data: planCount, refetch: refetchPlanCount } = useScaffoldReadContract({
+    contractName: "AgentPayVault",
+    functionName: "planCount",
+  });
+  const [activePlan, setActivePlan] = useState<bigint>(0n);
+  const latestPlan = activePlan > 0n ? activePlan : planCount && planCount > 0n ? planCount : 0n;
 
   const { data: myCredits, refetch: refetchCredits } = useScaffoldReadContract({
     contractName: "AgentPayVault",
@@ -272,10 +279,12 @@ export const PlanCard = () => {
             className="btn btn-sm btn-outline"
             disabled={busy}
             onClick={() =>
-              act(
-                () => writeContractAsync({ functionName: "createPlan", args: [parseEther(price)] }),
-                `服务已挂单：${price} MON/次`,
-              )
+              act(async () => {
+                await writeContractAsync({ functionName: "createPlan", args: [parseEther(price)] });
+                // 挂单后立刻刷新计数并锁定新 plan —— 后续订阅/计量不再依赖轮询时序
+                const { data: fresh } = await refetchPlanCount();
+                if (fresh && fresh > 0n) setActivePlan(BigInt(fresh.toString()));
+              }, `服务已挂单：${price} MON/次`)
             }
           >
             挂单 {price} MON/次
@@ -349,8 +358,12 @@ export const EscrowCard = () => {
     return () => clearInterval(t);
   }, []);
 
-  const { data: escrowCount } = useScaffoldReadContract({ contractName: "AgentPayVault", functionName: "escrowCount" });
-  const latestId = escrowCount && escrowCount > 0n ? escrowCount : 0n;
+  const { data: escrowCount, refetch: refetchEscrowCount } = useScaffoldReadContract({
+    contractName: "AgentPayVault",
+    functionName: "escrowCount",
+  });
+  const [activeEscrow, setActiveEscrow] = useState<bigint>(0n);
+  const latestId = activeEscrow > 0n ? activeEscrow : escrowCount && escrowCount > 0n ? escrowCount : 0n;
 
   const { data: escrowRaw, refetch } = useScaffoldReadContract({
     contractName: "AgentPayVault",
@@ -402,15 +415,16 @@ export const EscrowCard = () => {
             className="btn btn-sm btn-accent"
             disabled={busy}
             onClick={() =>
-              act(
-                () =>
-                  writeContractAsync({
-                    functionName: "lockEscrow",
-                    args: [address!, DEMO_RESULT_HASH, 600n, 60n, zeroAddress],
-                    value: parseEther(amount),
-                  }),
-                "资金已锁定（交付期 10 分钟 + 争议窗口 60 秒）",
-              )
+              act(async () => {
+                await writeContractAsync({
+                  functionName: "lockEscrow",
+                  args: [address!, DEMO_RESULT_HASH, 600n, 60n, zeroAddress],
+                  value: parseEther(amount),
+                });
+                // 锁定后立刻刷新计数并固定新 escrow —— 交付/释放不再依赖轮询时序
+                const { data: fresh } = await refetchEscrowCount();
+                if (fresh && fresh > 0n) setActiveEscrow(BigInt(fresh.toString()));
+              }, "资金已锁定（交付期 10 分钟 + 争议窗口 60 秒）")
             }
           >
             锁定资金

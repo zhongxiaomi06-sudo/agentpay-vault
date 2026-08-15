@@ -42,7 +42,10 @@ export const ChannelCard = () => {
   });
   const ch = structAt<ChannelStruct>(channelRaw, CHANNEL_KEYS);
 
-  const { data: nonceData } = useScaffoldReadContract({ contractName: "ChannelVault", functionName: "channelNonce" });
+  const { data: nonceData, refetch: refetchNonce } = useScaffoldReadContract({
+    contractName: "ChannelVault",
+    functionName: "channelNonce",
+  });
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "ChannelVault" });
   const { signTypedDataAsync } = useSignTypedData();
 
@@ -56,7 +59,9 @@ export const ChannelCard = () => {
         value: parseEther(budget),
       });
       // 通道 ID = keccak256(agent, provider, nonce)
-      const nextNonce = (nonceData ?? 0n) + 1n;
+      // 交易确认后 nonce 已自增：必须重新读链上最新值，不能用缓存 + 1（缓存滞后会算错 ID 导致结算失败）
+      const { data: freshNonce } = await refetchNonce();
+      const nextNonce = freshNonce ?? (nonceData ?? 0n) + 1n;
       const id = keccak256(
         encodeAbiParameters(
           [{ type: "address" }, { type: "address" }, { type: "uint256" }],
