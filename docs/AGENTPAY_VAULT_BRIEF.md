@@ -266,7 +266,7 @@ Monad 官方描述：交易先乐观并行生成 pending result，串行提交�
 1. 使用 USDC + SafeERC20；
 2. 加 ReentrancyGuard、暂停机制和权限治理；
 3. Stream、Channel、Escrow 统一 fee policy；
-4. 完整单元测试、状态机 invariant、fuzz 和外部审计；
+4. 将现有 Escrow 单元测试扩展到全合约，并补状态机 invariant、fuzz 和外部审计；
 5. 激活 arbiter hook 或设计可插拔争议策略。
 
 ## 10. 答辩原则
