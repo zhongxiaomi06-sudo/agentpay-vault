@@ -59,9 +59,14 @@ contract ChannelVault {
 
     /// 对 voucher 的 EIP-712 摘要
     function voucherDigest(bytes32 channelId, uint256 cumulativeAmount) public view returns (bytes32) {
-        return keccak256(
-            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, keccak256(abi.encode(VOUCHER_TYPEHASH, channelId, cumulativeAmount)))
-        );
+        return
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    DOMAIN_SEPARATOR,
+                    keccak256(abi.encode(VOUCHER_TYPEHASH, channelId, cumulativeAmount))
+                )
+            );
     }
 
     /// 服务商提交最后一张 voucher 结算（可多次，每次按增量结算）
@@ -77,7 +82,7 @@ contract ChannelVault {
         uint256 delta = cumulativeAmount - c.settled;
         c.settled = cumulativeAmount;
         emit ChannelClaimed(channelId, cumulativeAmount, delta);
-        (bool ok,) = c.provider.call{ value: delta }("");
+        (bool ok, ) = c.provider.call{ value: delta }("");
         require(ok, "ChannelVault: transfer failed");
     }
 
@@ -91,7 +96,7 @@ contract ChannelVault {
         uint256 refund = c.budget - c.settled;
         emit ChannelClosed(channelId, refund);
         if (refund > 0) {
-            (bool ok,) = c.agent.call{ value: refund }("");
+            (bool ok, ) = c.agent.call{ value: refund }("");
             require(ok, "ChannelVault: refund failed");
         }
     }

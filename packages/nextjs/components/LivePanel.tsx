@@ -22,6 +22,8 @@ export const LivePanel = () => {
     watch: true,
   });
 
+  // 演示场景需要实时事件流；弃用警告针对生产索引场景（roadmap: 换 Envio/Ponder）
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const { data: bumpEvents } = useScaffoldEventHistory({
     contractName: "ConflictLab",
     eventName: "Bumped",

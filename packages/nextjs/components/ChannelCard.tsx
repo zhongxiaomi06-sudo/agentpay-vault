@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatEther, hexToSignature, keccak256, encodeAbiParameters, parseEther } from "viem";
+import { encodeAbiParameters, formatEther, keccak256, parseEther, parseSignature } from "viem";
 import { useAccount, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
@@ -105,7 +105,7 @@ export const ChannelCard = () => {
     if (!latestVoucher || !channelId) return;
     setBusy(true);
     try {
-      const { r, s, yParity } = hexToSignature(latestVoucher.sig);
+      const { r, s, yParity } = parseSignature(latestVoucher.sig);
       await writeContractAsync({
         functionName: "claim",
         args: [channelId, latestVoucher.amount, 27 + (yParity ?? 0), r, s],

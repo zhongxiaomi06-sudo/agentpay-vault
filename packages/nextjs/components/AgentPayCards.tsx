@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatEther, hexToSignature, parseEther, zeroAddress } from "viem";
+import { formatEther, parseEther, parseSignature, zeroAddress } from "viem";
 import { useAccount, useSignTypedData } from "wagmi";
-import { useDeployedContractInfo, useScaffoldEventHistory, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -37,7 +37,15 @@ export const StreamCard = () => {
 
   // viem 返回 struct 为带名字段对象；做一层防御性兼容
   const s = streamRaw as unknown as
-    | { payer: string; payee: string; deposit: bigint; ratePerSecond: bigint; start: bigint; withdrawn: bigint; active: boolean }
+    | {
+        payer: string;
+        payee: string;
+        deposit: bigint;
+        ratePerSecond: bigint;
+        start: bigint;
+        withdrawn: bigint;
+        active: boolean;
+      }
     | undefined;
   const active = s?.active;
   const elapsed = s && nowSec > 0 ? Math.max(0, nowSec - Number(s.start)) : 0;
@@ -114,14 +122,21 @@ export const StreamCard = () => {
               <button
                 className="btn btn-xs btn-secondary"
                 disabled={busy || !active}
-                onClick={() => act(() => writeContractAsync({ functionName: "withdrawStream", args: [latestId] }), "服务商已提现")}
+                onClick={() =>
+                  act(() => writeContractAsync({ functionName: "withdrawStream", args: [latestId] }), "服务商已提现")
+                }
               >
                 服务商提现
               </button>
               <button
                 className="btn btn-xs btn-ghost"
                 disabled={busy || !active}
-                onClick={() => act(() => writeContractAsync({ functionName: "closeStream", args: [latestId] }), "金库已关闭，余额退回")}
+                onClick={() =>
+                  act(
+                    () => writeContractAsync({ functionName: "closeStream", args: [latestId] }),
+                    "金库已关闭，余额退回",
+                  )
+                }
               >
                 关闭结算
               </button>
@@ -161,13 +176,6 @@ export const PlanCard = () => {
     contractName: "AgentPayVault",
     functionName: "callSeq",
     args: [latestPlan, address],
-  });
-
-  const { data: callEvents } = useScaffoldEventHistory({
-    contractName: "AgentPayVault",
-    eventName: "ServiceCalled",
-    watch: true,
-    fromBlock: 0n,
   });
 
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
@@ -213,7 +221,7 @@ export const PlanCard = () => {
         primaryType: "MeterAuth",
         message: { planId: latestPlan, agent: address, callIndex },
       });
-      const { r, s, yParity } = hexToSignature(sig);
+      const { r, s, yParity } = parseSignature(sig);
       await writeContractAsync({
         functionName: "meter",
         args: [latestPlan, address, callIndex, 27 + (yParity ?? 0), r, s],
@@ -226,13 +234,20 @@ export const PlanCard = () => {
     <div className="card bg-base-200 border border-secondary/30">
       <div className="card-body gap-3">
         <h2 className="card-title">🎫 按次付费订阅</h2>
-        <p className="text-xs text-base-content/60 -mt-2">x402 流程：请求 → 402 Payment Required → 链上扣费 → 返回数据</p>
+        <p className="text-xs text-base-content/60 -mt-2">
+          x402 流程：请求 → 402 Payment Required → 链上扣费 → 返回数据
+        </p>
 
         <div className="flex gap-2 flex-wrap">
           <button
             className="btn btn-sm btn-outline"
             disabled={busy}
-            onClick={() => act(() => writeContractAsync({ functionName: "createPlan", args: [parseEther(price)] }), `服务已挂单：${price} MON/次`)}
+            onClick={() =>
+              act(
+                () => writeContractAsync({ functionName: "createPlan", args: [parseEther(price)] }),
+                `服务已挂单：${price} MON/次`,
+              )
+            }
           >
             挂单 {price} MON/次
           </button>
@@ -347,7 +362,12 @@ export const EscrowCard = () => {
                 () =>
                   writeContractAsync({
                     functionName: "lockEscrow",
-                    args: [address!, "0x0000000000000000000000000000000000000000000000000000000000000000", 3600n, zeroAddress],
+                    args: [
+                      address!,
+                      "0x0000000000000000000000000000000000000000000000000000000000000000",
+                      3600n,
+                      zeroAddress,
+                    ],
                     value: parseEther(amount),
                   }),
                 "资金已锁定进 Escrow",
@@ -374,7 +394,12 @@ export const EscrowCard = () => {
                     () =>
                       writeContractAsync({
                         functionName: "deliver",
-                        args: [latestId, `0x${Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, "0")).join("")}` as `0x${string}`],
+                        args: [
+                          latestId,
+                          `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)))
+                            .map(b => b.toString(16).padStart(2, "0"))
+                            .join("")}` as `0x${string}`,
+                        ],
                       }),
                     "交付凭证已上链",
                   )
@@ -385,14 +410,18 @@ export const EscrowCard = () => {
               <button
                 className="btn btn-xs btn-success"
                 disabled={busy || e.status !== 1}
-                onClick={() => act(() => writeContractAsync({ functionName: "release", args: [latestId] }), "资金已释放给服务商")}
+                onClick={() =>
+                  act(() => writeContractAsync({ functionName: "release", args: [latestId] }), "资金已释放给服务商")
+                }
               >
                 确认释放
               </button>
               <button
                 className="btn btn-xs btn-ghost"
                 disabled={busy || e.status !== 0}
-                onClick={() => act(() => writeContractAsync({ functionName: "refundExpired", args: [latestId] }), "已退款")}
+                onClick={() =>
+                  act(() => writeContractAsync({ functionName: "refundExpired", args: [latestId] }), "已退款")
+                }
               >
                 超时退款
               </button>

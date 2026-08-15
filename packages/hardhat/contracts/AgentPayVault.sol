@@ -102,13 +102,14 @@ contract AgentPayVault {
 
     /// meter 授权摘要（前端 signTypedData 用同一个）
     function meterDigest(uint256 planId, address agent, uint256 callIndex) public view returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                PLAN_DOMAIN_SEPARATOR,
-                keccak256(abi.encode(METER_TYPEHASH, planId, agent, callIndex))
-            )
-        );
+        return
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    PLAN_DOMAIN_SEPARATOR,
+                    keccak256(abi.encode(METER_TYPEHASH, planId, agent, callIndex))
+                )
+            );
     }
 
     // ================= 流支付 =================
@@ -152,7 +153,7 @@ contract AgentPayVault {
         require(amount > 0, "AgentPay: nothing earned");
         s.withdrawn += amount;
         emit StreamWithdrawn(id, amount, block.timestamp - s.start);
-        (bool ok,) = s.payee.call{ value: amount }("");
+        (bool ok, ) = s.payee.call{ value: amount }("");
         require(ok, "AgentPay: transfer failed");
     }
 
@@ -167,11 +168,11 @@ contract AgentPayVault {
         s.withdrawn = s.deposit; // 标记全部结清
         emit StreamClosed(id, refund, outstanding);
         if (outstanding > 0) {
-            (bool ok1,) = s.payee.call{ value: outstanding }("");
+            (bool ok1, ) = s.payee.call{ value: outstanding }("");
             require(ok1, "AgentPay: payee transfer failed");
         }
         if (refund > 0) {
-            (bool ok2,) = s.payer.call{ value: refund }("");
+            (bool ok2, ) = s.payer.call{ value: refund }("");
             require(ok2, "AgentPay: refund failed");
         }
     }
@@ -226,14 +227,19 @@ contract AgentPayVault {
         require(amount > 0, "AgentPay: nothing to withdraw");
         pending[msg.sender] = 0;
         emit ProviderWithdrawn(msg.sender, amount);
-        (bool ok,) = msg.sender.call{ value: amount }("");
+        (bool ok, ) = msg.sender.call{ value: amount }("");
         require(ok, "AgentPay: transfer failed");
     }
 
     // ================= Escrow =================
 
     /// agent 锁定一笔款，约定交付截止；arbiter 传 0 地址表示无仲裁
-    function lockEscrow(address payee, bytes32 expectedHash, uint256 timeoutSecs, address arbiter) external payable returns (uint256 id) {
+    function lockEscrow(
+        address payee,
+        bytes32 expectedHash,
+        uint256 timeoutSecs,
+        address arbiter
+    ) external payable returns (uint256 id) {
         require(msg.value > 0, "AgentPay: amount required");
         id = ++escrowCount;
         escrows[id] = Escrow({
@@ -266,7 +272,7 @@ contract AgentPayVault {
         require(e.status == EscrowStatus.Delivered, "AgentPay: not delivered");
         e.status = EscrowStatus.Released;
         emit EscrowReleased(id);
-        (bool ok,) = e.payee.call{ value: e.amount }("");
+        (bool ok, ) = e.payee.call{ value: e.amount }("");
         require(ok, "AgentPay: transfer failed");
     }
 
@@ -277,7 +283,7 @@ contract AgentPayVault {
         require(block.timestamp > e.deadline, "AgentPay: not expired");
         e.status = EscrowStatus.Refunded;
         emit EscrowRefunded(id);
-        (bool ok,) = e.payer.call{ value: e.amount }("");
+        (bool ok, ) = e.payer.call{ value: e.amount }("");
         require(ok, "AgentPay: refund failed");
     }
 }

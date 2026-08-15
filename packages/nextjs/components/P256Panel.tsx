@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { sha256 } from "@noble/hashes/sha2.js";
 import { p256 } from "@noble/curves/nist.js";
+import { sha256 } from "@noble/hashes/sha2.js";
 import { usePublicClient } from "wagmi";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 
@@ -60,10 +60,12 @@ export const P256Panel = () => {
   return (
     <div className="card bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary">
       <div className="card-body gap-3">
-        <h2 className="card-title">🔐 P256 原生验证 <span className="badge badge-primary">Monad 独占</span></h2>
+        <h2 className="card-title">
+          🔐 P256 原生验证 <span className="badge badge-primary">Monad 独占</span>
+        </h2>
         <p className="text-xs text-base-content/70">
-          AI agent 常用 passkey / Secure Enclave 密钥（secp256r1）。别的链用 Solidity 验这种签名要烧几十万 gas，
-          Monad 内置 P256 precompile（RIP-7212）——agent 用设备密钥直接签名确认 Escrow 交付。
+          AI agent 常用 passkey / Secure Enclave 密钥（secp256r1）。别的链用 Solidity 验这种签名要烧几十万 gas， Monad
+          内置 P256 precompile（RIP-7212）——agent 用设备密钥直接签名确认 Escrow 交付。
         </p>
         <div className="flex gap-3 items-center flex-wrap">
           <button className="btn btn-sm btn-primary" disabled={busy} onClick={run}>

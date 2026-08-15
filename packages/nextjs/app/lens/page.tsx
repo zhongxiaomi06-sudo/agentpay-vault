@@ -30,10 +30,13 @@ const ParallelLens: NextPage = () => {
       setCommitIdx(0);
       // 阶段2：逐笔提交，每笔 1s
       txs.forEach((_, i) => {
-        setTimeout(() => {
-          setCommitIdx(i + 1);
-          if (i === txs.length - 1) setTimeout(() => setPhase("done"), 900);
-        }, (i + 1) * 1000);
+        setTimeout(
+          () => {
+            setCommitIdx(i + 1);
+            if (i === txs.length - 1) setTimeout(() => setPhase("done"), 900);
+          },
+          (i + 1) * 1000,
+        );
       });
     }, 1200);
   };
@@ -106,8 +109,7 @@ const ParallelLens: NextPage = () => {
             >
               <div className="card-body py-3 px-4 flex-row items-center gap-4 flex-wrap">
                 <div className="w-24 font-bold">
-                  TX#{tx.id}{" "}
-                  {committing && <span className="loading loading-spinner loading-xs text-warning" />}
+                  TX#{tx.id} {committing && <span className="loading loading-spinner loading-xs text-warning" />}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`badge ${ADDR_STYLE[tx.from] ?? "badge-neutral"}`}>{tx.from}</span>→
@@ -126,7 +128,9 @@ const ParallelLens: NextPage = () => {
                 <div className="w-56 text-sm font-mono">
                   {!showOptimistic && <span className="text-base-content/40">等待发车</span>}
                   {showOptimistic && !committed && trace && (
-                    <span className="text-primary">并行输出: {tx.from}=${trace.optimisticOutput[tx.from]}</span>
+                    <span className="text-primary">
+                      并行输出: {tx.from}=${trace.optimisticOutput[tx.from]}
+                    </span>
                   )}
                   {conflict && trace && (
                     <span className="text-error font-bold">
@@ -180,8 +184,8 @@ const ParallelLens: NextPage = () => {
               </table>
             </div>
             <p className="text-xs text-base-content/60 mt-2">
-              TX#3 并行执行时读到 Alice=$1000 的旧快照，输出 $900；提交时发现 Alice 已被 TX#1 改为 $900 → 用已提交状态覆盖快照后重执行，得到正确结果
-              $800。这就是 Monad「乐观并行执行 + 冲突重执行」的全过程。
+              TX#3 并行执行时读到 Alice=$1000 的旧快照，输出 $900；提交时发现 Alice 已被 TX#1 改为 $900 →
+              用已提交状态覆盖快照后重执行，得到正确结果 $800。这就是 Monad「乐观并行执行 + 冲突重执行」的全过程。
             </p>
           </div>
         </div>
