@@ -15,11 +15,11 @@ const Home: NextPage = () => {
         <h1 className="text-5xl font-bold mb-3 leading-tight">
           AgentPay <span className="ink-accent">Vault</span>
         </h1>
-        <p className="text-lg text-base-content/85 serif">AI Agent 经济的微支付结算层 · x402 的合约补层</p>
+        <p className="text-lg text-base-content/85 serif">AI Agent 跨请求资金关系的结算状态机</p>
         <p className="text-sm text-base-content/55 mt-3 max-w-2xl mx-auto leading-relaxed">
-          x402 教 agent 怎么开口谈钱（HTTP 授权层）—— 而钱在链上的账本与保险柜，由这里提供。
+          x402 完成单次 HTTP 支付；AgentPay 管理跨时间、跨调用与跨任务的链上结算。
           <br />
-          三种消费形态，三个合约原语，一行代码切换结算模式。
+          三种消费形态，三类结算原语，一个可验证的资金状态层。
         </p>
       </div>
 
@@ -36,14 +36,14 @@ const Home: NextPage = () => {
       <EscrowCard />
       <PlanCard />
 
-      {/* Monad 独占能力 */}
+      {/* Monad 原生能力 */}
       <P256Panel />
 
-      {/* 并行执行证明 */}
+      {/* 并行执行模型演示 */}
       <div className="card w-full border border-primary/40 bg-gradient-to-r from-primary/15 via-base-200 to-accent/10">
         <div className="card-body py-5 flex-row items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="card-title text-base">🔬 为什么只有 Monad 成立？</h2>
+            <h2 className="card-title text-base">🔬 为什么选择 Monad？</h2>
             <p className="text-xs text-base-content/60 mt-1">
               100 个 agent 同时给同一服务商付费 = 热状态冲突。看 Monad 乐观并行执行如何处理 —— 冲突显微镜现场演示
             </p>

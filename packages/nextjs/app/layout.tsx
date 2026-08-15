@@ -7,7 +7,7 @@ import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({
   title: "AgentPay Vault — AI Agent 微支付结算层",
-  description: "x402 的合约补层：流支付金库 + 按次计量 + 任务托管，on Monad",
+  description: "AI Agent 跨时间、跨调用与跨任务的链上结算状态机，on Monad",
 });
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {

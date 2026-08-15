@@ -226,7 +226,7 @@ export const PlanCard = () => {
     }
   };
 
-  // x402 真实流程：agent 离线签 MeterAuth 授权 → 服务商持签名调 meter() 链上记账
+  // MeterAuth 演示：签名与计量真实执行；当前由连接钱包提交交易，独立 relayer 是下一步
   const [apiResult, setApiResult] = useState<string | null>(null);
   const callPaidApi = () =>
     act(async () => {
@@ -257,17 +257,15 @@ export const PlanCard = () => {
         args: [latestPlan, address, callIndex, 27 + (yParity ?? 0), r, s],
       });
       refetchSeq();
-      setApiResult(`🤖 AI 推理结果 #${Number(callIndex) + 1}: "agent 零 gas 签名授权，服务商代付上链 —— 这就是 x402"`);
-    }, "402 → 签名授权 → meter() 记账成功，数据已返回");
+      setApiResult(`🤖 计量结果 #${Number(callIndex) + 1}: "MeterAuth 验签并完成链上记账；当前交易由连接钱包提交"`);
+    }, "MeterAuth 签名 → meter() 记账成功");
 
   return (
     <div className="card relative">
       <span className="absolute right-5 top-5 size-2.5 rounded-full bg-info" />
       <div className="card-body gap-3">
         <h2 className="card-title">🎫 按次付费订阅</h2>
-        <p className="text-xs text-base-content/60 -mt-2">
-          x402 流程：请求 → 402 Payment Required → 链上扣费 → 返回数据
-        </p>
+        <p className="text-xs text-base-content/60 -mt-2">自定义 MeterAuth 原型：离线签名 → 链上验签 → 扣减预付额度</p>
 
         <div className="flex gap-2 flex-wrap">
           <button
@@ -315,7 +313,7 @@ export const PlanCard = () => {
             </div>
             <div className="flex gap-2 items-center flex-wrap">
               <button className="btn btn-sm btn-accent" disabled={busy} onClick={callPaidApi}>
-                ⚡ 调用付费 API
+                ⚡ 签名并计量
               </button>
               <span className="text-xs text-base-content/50">服务商待提现: {formatEther(myPending ?? 0n)} MON</span>
               <button
