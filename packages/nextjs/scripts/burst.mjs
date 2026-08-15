@@ -1,10 +1,10 @@
 // 多 agent 并发压测：3 个 agent 同时向 ConflictLab 各发 4 笔 bump()
 // 全部争抢 hotCounter 热状态 → 观察多少笔挤进同一个亚秒区块
 // 用法：node scripts/burst.mjs   （agent 钱包需先有 MON，私钥在 ../hardhat/.env.agents）
+import { readFileSync } from "fs";
 import { createPublicClient, createWalletClient, http, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
-import { readFileSync } from "fs";
 
 const CONFLICT_LAB = "0xe4ef366c5c5ad646c8c044a3ab579b32c1cc447e";
 const abi = parseAbi(["function bump()", "function hotCounter() view returns (uint256)"]);
