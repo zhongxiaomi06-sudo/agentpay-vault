@@ -58,7 +58,8 @@ export const P256Panel = () => {
   };
 
   return (
-    <div className="card bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary">
+    <div className="card relative">
+      <span className="absolute right-5 top-5 size-2.5 rounded-full bg-accent" />
       <div className="card-body gap-3">
         <h2 className="card-title">
           🔐 P256 原生验证 <span className="badge badge-primary">Monad 独占</span>
