@@ -17,7 +17,7 @@ const scaffoldConfig = {
 
   // The interval at which your front-end polls the RPC servers for new data
   // it has no effect if you only target the local network (default is 4000)
-  pollingInterval: 3000,
+  pollingInterval: 12000,
 
   // This is ours Alchemy's default API key.
   // You can get your own at https://dashboard.alchemyapi.io
@@ -28,8 +28,7 @@ const scaffoldConfig = {
   // If you want to use a different RPC for a specific network, you can add it here.
   // The key is the chain ID, and the value is the HTTP RPC URL
   rpcOverrides: {
-    // Example:
-    // [chains.mainnet.id]: "https://mainnet.rpc.buidlguidl.com",
+    [chains.monadTestnet.id]: process.env.NEXT_PUBLIC_MONAD_RPC_URL || "https://monad-testnet.drpc.org",
   },
 
   // This is ours WalletConnect's default project ID.

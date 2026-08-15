@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { encodeAbiParameters, formatEther, keccak256, parseEther, parseSignature } from "viem";
-import { useAccount, useSignTypedData } from "wagmi";
+import { formatEther, parseEther, parseSignature } from "viem";
+import { useAccount, usePublicClient, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { notification } from "~~/utils/scaffold-eth";
+import { getFriendlyTransactionError, getReceiptEventArg, notification } from "~~/utils/scaffold-eth";
 import { structAt } from "~~/utils/scaffold-eth/structAt";
 
 type ChannelStruct = {
@@ -29,6 +29,7 @@ export const ChannelCard = () => {
   const { address } = useAccount();
   const { targetNetwork } = useTargetNetwork();
   const { data: deployed } = useDeployedContractInfo({ contractName: "ChannelVault" });
+  const publicClient = usePublicClient({ chainId: targetNetwork.id });
   const [budget] = useState("0.01");
   const [busy, setBusy] = useState(false);
   const [channelId, setChannelId] = useState<`0x${string}` | null>(null);
@@ -42,35 +43,27 @@ export const ChannelCard = () => {
   });
   const ch = structAt<ChannelStruct>(channelRaw, CHANNEL_KEYS);
 
-  const { data: nonceData } = useScaffoldReadContract({ contractName: "ChannelVault", functionName: "channelNonce" });
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "ChannelVault" });
   const { signTypedDataAsync } = useSignTypedData();
 
   const open = async () => {
-    if (!address || !deployed) return notification.error("先连接钱包");
+    if (!address || !deployed || !publicClient) return notification.error("钱包、RPC 或合约信息尚未就绪");
     setBusy(true);
     try {
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         functionName: "openChannel",
         args: [address, 3600n],
         value: parseEther(budget),
       });
-      // 通道 ID = keccak256(agent, provider, nonce)
-      const nextNonce = (nonceData ?? 0n) + 1n;
-      const id = keccak256(
-        encodeAbiParameters(
-          [{ type: "address" }, { type: "address" }, { type: "uint256" }],
-          [address, address, nextNonce],
-        ),
-      );
+      const receipt = await publicClient.getTransactionReceipt({ hash });
+      const id = getReceiptEventArg<`0x${string}`>(receipt, deployed.abi, "ChannelOpened", "channelId");
       setChannelId(id);
       setCallCount(0);
       setLatestVoucher(null);
       notification.success("通道已开启（链上交易 #1）");
-      refetch();
     } catch (e) {
       console.error(e);
-      notification.error("开通道失败");
+      notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
     }
@@ -104,7 +97,7 @@ export const ChannelCard = () => {
       notification.success(`第 ${next} 次调用完成（离线签名，0 gas）`);
     } catch (e) {
       console.error(e);
-      notification.error("签名取消或失败");
+      notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
     }
@@ -120,10 +113,10 @@ export const ChannelCard = () => {
         args: [channelId, latestVoucher.amount, 27 + (yParity ?? 0), r, s],
       });
       notification.success(`已结算 ${callCount} 次调用（链上交易 #2）`);
-      refetch();
+      await refetch();
     } catch (e) {
       console.error(e);
-      notification.error("结算失败");
+      notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
     }

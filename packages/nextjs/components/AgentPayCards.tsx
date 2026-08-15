@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { formatEther, keccak256, parseEther, parseSignature, toBytes, zeroAddress } from "viem";
-import { useAccount, useSignTypedData } from "wagmi";
+import { useAccount, usePublicClient, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { notification } from "~~/utils/scaffold-eth";
+import { getFriendlyTransactionError, getReceiptEventArg, notification } from "~~/utils/scaffold-eth";
 import { structAt } from "~~/utils/scaffold-eth/structAt";
 
 type StreamStruct = {
@@ -52,6 +52,7 @@ export const StreamCard = () => {
   const [rate, setRate] = useState("0.00001"); // MON/秒
   const [deposit, setDeposit] = useState("0.01"); // 总押金 MON
   const [busy, setBusy] = useState(false);
+  const [streamId, setStreamId] = useState(0n);
   const [nowSec, setNowSec] = useState(0); // 每秒刷新驱动余额流动（effect 内取时，满足 React 渲染纯度）
 
   useEffect(() => {
@@ -61,16 +62,16 @@ export const StreamCard = () => {
     return () => clearInterval(t);
   }, []);
 
-  const { data: streamCount } = useScaffoldReadContract({ contractName: "AgentPayVault", functionName: "streamCount" });
-  const latestId = streamCount ? BigInt(streamCount.toString()) : 0n;
-
-  const { data: streamRaw } = useScaffoldReadContract({
+  const { data: streamRaw, refetch } = useScaffoldReadContract({
     contractName: "AgentPayVault",
     functionName: "streams",
-    args: [latestId],
+    args: [streamId],
   });
 
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
+  const { data: vaultInfo } = useDeployedContractInfo({ contractName: "AgentPayVault" });
+  const { targetNetwork } = useTargetNetwork();
+  const publicClient = usePublicClient({ chainId: targetNetwork.id });
 
   // viem 返回 struct 为位置数组，用 structAt 归一化
   const s = structAt<StreamStruct>(streamRaw, STREAM_KEYS);
@@ -86,9 +87,10 @@ export const StreamCard = () => {
     try {
       await fn();
       notification.success(okMsg);
+      await refetch();
     } catch (e) {
       console.error(e);
-      notification.error("交易失败，看控制台");
+      notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
     }
@@ -116,25 +118,26 @@ export const StreamCard = () => {
             className="btn btn-sm btn-primary"
             disabled={busy}
             onClick={() =>
-              act(
-                () =>
-                  writeContractAsync({
-                    functionName: "openStream",
-                    args: [address!, parseEther(rate)],
-                    value: parseEther(deposit),
-                  }),
-                "金库已开启，开始流式计费！",
-              )
+              act(async () => {
+                if (!publicClient || !vaultInfo) throw new Error("Monad RPC 或合约信息尚未就绪");
+                const hash = await writeContractAsync({
+                  functionName: "openStream",
+                  args: [address!, parseEther(rate)],
+                  value: parseEther(deposit),
+                });
+                const receipt = await publicClient.getTransactionReceipt({ hash });
+                setStreamId(getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "StreamOpened", "id"));
+              }, "金库已开启，开始流式计费！")
             }
           >
             开启金库
           </button>
         </div>
 
-        {latestId > 0n && s && (
+        {streamId > 0n && s && (
           <div className="bg-base-300 rounded-xl p-4 font-mono text-sm">
             <div className="flex justify-between">
-              <span>Stream #{latestId.toString()}</span>
+              <span>Stream #{streamId.toString()}</span>
               <span className={active ? "text-success" : "text-base-content/50"}>{active ? "● 流动中" : "已关闭"}</span>
             </div>
             <div className="mt-2">
@@ -151,7 +154,7 @@ export const StreamCard = () => {
                 className="btn btn-xs btn-secondary"
                 disabled={busy || !active}
                 onClick={() =>
-                  act(() => writeContractAsync({ functionName: "withdrawStream", args: [latestId] }), "服务商已提现")
+                  act(() => writeContractAsync({ functionName: "withdrawStream", args: [streamId] }), "服务商已提现")
                 }
               >
                 服务商提现
@@ -161,7 +164,7 @@ export const StreamCard = () => {
                 disabled={busy || !active}
                 onClick={() =>
                   act(
-                    () => writeContractAsync({ functionName: "closeStream", args: [latestId] }),
+                    () => writeContractAsync({ functionName: "closeStream", args: [streamId] }),
                     "金库已关闭，余额退回",
                   )
                 }
@@ -184,17 +187,15 @@ export const PlanCard = () => {
   const [price] = useState("0.0001");
   const [calls, setCalls] = useState("10");
   const [busy, setBusy] = useState(false);
-
-  const { data: planCount } = useScaffoldReadContract({ contractName: "AgentPayVault", functionName: "planCount" });
-  const latestPlan = planCount && planCount > 0n ? planCount : 0n;
+  const [planId, setPlanId] = useState(0n);
 
   const { data: myCredits, refetch: refetchCredits } = useScaffoldReadContract({
     contractName: "AgentPayVault",
     functionName: "credits",
-    args: [latestPlan, address],
+    args: [planId, address],
   });
 
-  const { data: myPending } = useScaffoldReadContract({
+  const { data: myPending, refetch: refetchPending } = useScaffoldReadContract({
     contractName: "AgentPayVault",
     functionName: "pending",
     args: [address],
@@ -203,12 +204,13 @@ export const PlanCard = () => {
   const { data: myCallSeq, refetch: refetchSeq } = useScaffoldReadContract({
     contractName: "AgentPayVault",
     functionName: "callSeq",
-    args: [latestPlan, address],
+    args: [planId, address],
   });
 
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
   const { data: vaultInfo } = useDeployedContractInfo({ contractName: "AgentPayVault" });
   const { targetNetwork } = useTargetNetwork();
+  const publicClient = usePublicClient({ chainId: targetNetwork.id });
   const { signTypedDataAsync } = useSignTypedData();
 
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
@@ -217,10 +219,10 @@ export const PlanCard = () => {
     try {
       await fn();
       notification.success(okMsg);
-      refetchCredits();
+      await Promise.all([refetchCredits(), refetchSeq(), refetchPending()]);
     } catch (e) {
       console.error(e);
-      notification.error("交易失败，看控制台");
+      notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
     }
@@ -230,7 +232,7 @@ export const PlanCard = () => {
   const [apiResult, setApiResult] = useState<string | null>(null);
   const callPaidApi = () =>
     act(async () => {
-      if (!vaultInfo || !address) throw new Error("no vault");
+      if (!vaultInfo || !address) throw new Error("合约信息或钱包尚未就绪");
       // 连点时读最新序号，防缓存滞后导致 callIndex 过期 revert
       const { data: freshSeq } = await refetchSeq();
       const callIndex = freshSeq ?? myCallSeq ?? 0n;
@@ -249,16 +251,29 @@ export const PlanCard = () => {
           ],
         },
         primaryType: "MeterAuth",
-        message: { planId: latestPlan, agent: address, callIndex },
+        message: { planId, agent: address, callIndex },
       });
       const { r, s, yParity } = parseSignature(sig);
       await writeContractAsync({
         functionName: "meter",
-        args: [latestPlan, address, callIndex, 27 + (yParity ?? 0), r, s],
+        args: [planId, address, callIndex, 27 + (yParity ?? 0), r, s],
       });
-      refetchSeq();
-      setApiResult(`🤖 计量结果 #${Number(callIndex) + 1}: "MeterAuth 验签并完成链上记账；当前交易由连接钱包提交"`);
-    }, "MeterAuth 签名 → meter() 记账成功");
+      const response = await fetch("/api/paid-data", {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          "x-payment-auth": JSON.stringify({
+            planId: planId.toString(),
+            agent: address,
+            callIndex: callIndex.toString(),
+            signature: sig,
+          }),
+        },
+      });
+      const paidData = (await response.json()) as { data?: string; error?: string };
+      if (!response.ok) throw new Error(paidData.error || `付费接口返回 HTTP ${response.status}`);
+      setApiResult(paidData.data || `付费数据 #${Number(callIndex) + 1} 已放行`);
+    }, "402 授权通过 → meter() 记账成功");
 
   return (
     <div className="card relative">
@@ -272,10 +287,12 @@ export const PlanCard = () => {
             className="btn btn-sm btn-outline"
             disabled={busy}
             onClick={() =>
-              act(
-                () => writeContractAsync({ functionName: "createPlan", args: [parseEther(price)] }),
-                `服务已挂单：${price} MON/次`,
-              )
+              act(async () => {
+                if (!publicClient || !vaultInfo) throw new Error("Monad RPC 或合约信息尚未就绪");
+                const hash = await writeContractAsync({ functionName: "createPlan", args: [parseEther(price)] });
+                const receipt = await publicClient.getTransactionReceipt({ hash });
+                setPlanId(getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "PlanCreated", "planId"));
+              }, `服务已挂单：${price} MON/次`)
             }
           >
             挂单 {price} MON/次
@@ -286,13 +303,13 @@ export const PlanCard = () => {
           </label>
           <button
             className="btn btn-sm btn-secondary"
-            disabled={busy || latestPlan === 0n}
+            disabled={busy || planId === 0n}
             onClick={() =>
               act(
                 () =>
                   writeContractAsync({
                     functionName: "subscribe",
-                    args: [latestPlan, BigInt(calls)],
+                    args: [planId, BigInt(calls)],
                     value: parseEther(price) * BigInt(calls),
                   }),
                 `已预付 ${calls} 次调用`,
@@ -303,10 +320,10 @@ export const PlanCard = () => {
           </button>
         </div>
 
-        {latestPlan > 0n && (
+        {planId > 0n && (
           <div className="bg-base-300 rounded-xl p-4 font-mono text-sm flex flex-col gap-2">
             <div className="flex justify-between">
-              <span>Plan #{latestPlan.toString()}</span>
+              <span>Plan #{planId.toString()}</span>
               <span>
                 我的剩余次数: <b className="text-secondary">{myCredits?.toString() ?? "0"}</b>
               </span>
@@ -340,6 +357,7 @@ export const EscrowCard = () => {
   const { address } = useAccount();
   const [amount, setAmount] = useState("0.005");
   const [busy, setBusy] = useState(false);
+  const [escrowId, setEscrowId] = useState(0n);
   const [nowSec, setNowSec] = useState(0); // 争议窗口倒计时（effect 内取时，满足渲染纯度）
 
   useEffect(() => {
@@ -349,19 +367,19 @@ export const EscrowCard = () => {
     return () => clearInterval(t);
   }, []);
 
-  const { data: escrowCount } = useScaffoldReadContract({ contractName: "AgentPayVault", functionName: "escrowCount" });
-  const latestId = escrowCount && escrowCount > 0n ? escrowCount : 0n;
-
   const { data: escrowRaw, refetch } = useScaffoldReadContract({
     contractName: "AgentPayVault",
     functionName: "escrows",
-    args: [latestId],
+    args: [escrowId],
   });
 
   const e = structAt<EscrowStruct>(escrowRaw, ESCROW_KEYS);
   const STATUS = ["🔒 已锁定", "📦 已交付·争议窗口", "✅ 已释放/已取款", "↩️ 已退款", "⚖️ 争议 50/50"];
 
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
+  const { data: vaultInfo } = useDeployedContractInfo({ contractName: "AgentPayVault" });
+  const { targetNetwork } = useTargetNetwork();
+  const publicClient = usePublicClient({ chainId: targetNetwork.id });
 
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
     if (!address) return notification.error("请先连接钱包");
@@ -372,7 +390,7 @@ export const EscrowCard = () => {
       refetch();
     } catch (err) {
       console.error(err);
-      notification.error("交易失败，看控制台");
+      notification.error(getFriendlyTransactionError(err));
     } finally {
       setBusy(false);
     }
@@ -402,25 +420,26 @@ export const EscrowCard = () => {
             className="btn btn-sm btn-accent"
             disabled={busy}
             onClick={() =>
-              act(
-                () =>
-                  writeContractAsync({
-                    functionName: "lockEscrow",
-                    args: [address!, DEMO_RESULT_HASH, 600n, 60n, zeroAddress],
-                    value: parseEther(amount),
-                  }),
-                "资金已锁定（交付期 10 分钟 + 争议窗口 60 秒）",
-              )
+              act(async () => {
+                if (!publicClient || !vaultInfo) throw new Error("Monad RPC 或合约信息尚未就绪");
+                const hash = await writeContractAsync({
+                  functionName: "lockEscrow",
+                  args: [address!, DEMO_RESULT_HASH, 600n, 60n, zeroAddress],
+                  value: parseEther(amount),
+                });
+                const receipt = await publicClient.getTransactionReceipt({ hash });
+                setEscrowId(getReceiptEventArg<bigint>(receipt, vaultInfo.abi, "EscrowLocked", "id"));
+              }, "资金已锁定（交付期 10 分钟 + 争议窗口 60 秒）")
             }
           >
             锁定资金
           </button>
         </div>
 
-        {latestId > 0n && e && (
+        {escrowId > 0n && e && (
           <div className="bg-base-300 rounded-xl p-4 font-mono text-sm flex flex-col gap-2">
             <div className="flex justify-between">
-              <span>Escrow #{latestId.toString()}</span>
+              <span>Escrow #{escrowId.toString()}</span>
               <span className="badge badge-accent">{STATUS[e.status] ?? e.status}</span>
             </div>
             <div>金额: {formatEther(e.amount)} MON</div>
@@ -433,7 +452,7 @@ export const EscrowCard = () => {
                     () =>
                       writeContractAsync({
                         functionName: "deliver",
-                        args: [latestId, DEMO_RESULT_HASH],
+                        args: [escrowId, DEMO_RESULT_HASH],
                       }),
                     "交付凭证已上链，争议窗口开启（60s）",
                   )
@@ -445,7 +464,7 @@ export const EscrowCard = () => {
                 className="btn btn-xs btn-success"
                 disabled={busy || e.status !== 1}
                 onClick={() =>
-                  act(() => writeContractAsync({ functionName: "release", args: [latestId] }), "已确认释放 100%")
+                  act(() => writeContractAsync({ functionName: "release", args: [escrowId] }), "已确认释放 100%")
                 }
               >
                 买方确认释放
@@ -455,7 +474,7 @@ export const EscrowCard = () => {
                 disabled={busy || !windowOpen}
                 onClick={() =>
                   act(
-                    () => writeContractAsync({ functionName: "dispute", args: [latestId] }),
+                    () => writeContractAsync({ functionName: "dispute", args: [escrowId] }),
                     "争议成立：50/50 强制 split",
                   )
                 }
@@ -467,7 +486,7 @@ export const EscrowCard = () => {
                 disabled={busy || e.status !== 1 || windowOpen}
                 onClick={() =>
                   act(
-                    () => writeContractAsync({ functionName: "claim", args: [latestId] }),
+                    () => writeContractAsync({ functionName: "claim", args: [escrowId] }),
                     "窗口无争议，服务商乐观取款 100%",
                   )
                 }
@@ -478,7 +497,7 @@ export const EscrowCard = () => {
                 className="btn btn-xs btn-ghost"
                 disabled={busy || e.status !== 0}
                 onClick={() =>
-                  act(() => writeContractAsync({ functionName: "refundExpired", args: [latestId] }), "已退款")
+                  act(() => writeContractAsync({ functionName: "refundExpired", args: [escrowId] }), "已退款")
                 }
               >
                 超时退款
