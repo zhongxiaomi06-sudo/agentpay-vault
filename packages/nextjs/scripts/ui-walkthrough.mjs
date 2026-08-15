@@ -80,8 +80,8 @@ if (burnerState.chainId !== 10143) {
 const env = readFileSync(new URL("../../hardhat/.env.agents", import.meta.url), "utf8");
 const demo = privateKeyToAccount(env.match(/DEMO_WALLET_PK=(0x[0-9a-fA-F]+)/)[1]);
 const rpcTransport = fallback([
-  http("https://monad-testnet.drpc.org"),
   http("https://rpc.ankr.com/monad_testnet"),
+  http("https://monad-testnet.drpc.org"),
   http("https://testnet-rpc.monad.xyz"),
 ]);
 const pub = createPublicClient({ chain: monadTestnet, transport: rpcTransport });
@@ -92,11 +92,23 @@ const wallet = createWalletClient({
 });
 const bal = await pub.getBalance({ address: burnerAddress });
 if (bal < parseEther("1")) {
+  // 先确认零余额钱包会在签名前被前端拦截，并给出可操作提示。
+  const unfundedOpenButton = page.getByRole("button", { name: "开启金库" });
+  await unfundedOpenButton.click();
+  await page.getByText(/钱包 MON 余额不足/).waitFor({ state: "visible", timeout: 10000 });
+  log("零余额预检提示正确 ✓");
+
   const fundHash = await wallet.sendTransaction({ to: burnerAddress, value: parseEther("3") });
   await pub.waitForTransactionReceipt({ hash: fundHash });
   log("已注资 3 MON ✓");
 } else {
   log("burner 余额充足 ✓");
+}
+if (process.env.PREFLIGHT_ONLY === "1") {
+  if (errors.length) throw new Error(`余额预检产生了控制台错误：${errors[0]}`);
+  log("余额预检专项走查通过，控制台零错误 ✅");
+  await browser.close();
+  process.exit(0);
 }
 await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForTimeout(9000);
