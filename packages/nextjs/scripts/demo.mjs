@@ -196,7 +196,7 @@ const perAgent = fundedAgents.length > 0 ? 4 : 3;
 console.log(`  ${shooters.length} 个账户 × ${perAgent} 笔 bump() 同时开火（hotCounter 是全局热状态）…`);
 const t0 = Date.now();
 const bursts = await Promise.all(
-  shooters.map(async ({ pk, a }) => {
+  shooters.map(async ({ a }) => {
     const w = createWalletClient({ account: a, chain: monadTestnet, transport: http(RPC) });
     const base = await pub.getTransactionCount({ address: a.address, blockTag: "pending" });
     const hs = [];
