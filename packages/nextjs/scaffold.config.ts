@@ -41,8 +41,9 @@ const scaffoldConfig = {
   // - "localOnly": only show when all target networks are local (hardhat/anvil)
   // - "allNetworks": show on any configured target networks
   // - "disabled": completely disable
-  // 演示保险：测试网上也启用 burner 钱包——MetaMask 掉链子时页面内直接点
-  burnerWalletMode: "allNetworks",
+  // 随机 burner 在测试网上默认是 0 MON，会让真实演示误连后必然失败。
+  // 生产演示只允许使用已经领取测试币的外部钱包。
+  burnerWalletMode: process.env.NODE_ENV === "production" ? "localNetworksOnly" : "allNetworks",
 } as const satisfies ScaffoldConfig;
 
 export default scaffoldConfig;

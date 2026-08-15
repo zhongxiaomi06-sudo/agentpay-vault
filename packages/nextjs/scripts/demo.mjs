@@ -6,6 +6,7 @@ import { readFileSync } from "fs";
 import {
   createPublicClient,
   createWalletClient,
+  fallback,
   formatEther,
   http,
   keccak256,
@@ -17,7 +18,11 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
 
-const RPC = "https://testnet-rpc.monad.xyz";
+const RPC_URLS = [
+  "https://rpc.ankr.com/monad_testnet",
+  "https://monad-testnet.drpc.org",
+  "https://testnet-rpc.monad.xyz",
+];
 const VAULT = "0x1236c35d325314890f6ab14a549bf057ac01931a";
 const CONFLICT_LAB = "0xe4ef366c5c5ad646c8c044a3ab579b32c1cc447e";
 
@@ -53,10 +58,14 @@ const deployerPk = readFileSync(new URL("../../hardhat/.env", import.meta.url), 
   /__RUNTIME_DEPLOYER_PRIVATE_KEY=(0x[0-9a-fA-F]+)/,
 )[1];
 
-const pub = createPublicClient({ chain: monadTestnet, transport: http(RPC) });
+const rpcTransport = fallback(
+  RPC_URLS.map(url => http(url, { retryCount: 0, timeout: 12_000 })),
+  { retryCount: 0 },
+);
+const pub = createPublicClient({ chain: monadTestnet, transport: rpcTransport });
 const mainPk = demoPk ?? deployerPk;
 const main = privateKeyToAccount(mainPk);
-const wallet = createWalletClient({ account: main, chain: monadTestnet, transport: http(RPC) });
+const wallet = createWalletClient({ account: main, chain: monadTestnet, transport: rpcTransport });
 
 const bal = await pub.getBalance({ address: main.address });
 console.log(`主演示账户: ${main.address}  余额: ${formatEther(bal)} MON`);
@@ -197,7 +206,7 @@ console.log(`  ${shooters.length} 个账户 × ${perAgent} 笔 bump() 同时开�
 const t0 = Date.now();
 const bursts = await Promise.all(
   shooters.map(async ({ a }) => {
-    const w = createWalletClient({ account: a, chain: monadTestnet, transport: http(RPC) });
+    const w = createWalletClient({ account: a, chain: monadTestnet, transport: rpcTransport });
     const base = await pub.getTransactionCount({ address: a.address, blockTag: "pending" });
     const hs = [];
     for (let i = 0; i < perAgent; i++) {

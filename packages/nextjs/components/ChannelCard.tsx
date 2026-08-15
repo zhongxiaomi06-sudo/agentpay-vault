@@ -5,7 +5,12 @@ import { formatEther, parseEther, parseSignature } from "viem";
 import { useAccount, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { getFriendlyTransactionError, getReceiptEventArg, notification } from "~~/utils/scaffold-eth";
+import {
+  getFriendlyTransactionError,
+  getReceiptEventArg,
+  isExpectedTransactionError,
+  notification,
+} from "~~/utils/scaffold-eth";
 import { structAt } from "~~/utils/scaffold-eth/structAt";
 
 type ChannelStruct = {
@@ -68,7 +73,7 @@ export const ChannelCard = () => {
       setLatestVoucher(null);
       notification.success("通道已开启（链上交易 #1）");
     } catch (e) {
-      console.error(e);
+      if (!isExpectedTransactionError(e)) console.error(e);
       notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
@@ -102,7 +107,7 @@ export const ChannelCard = () => {
       setLatestVoucher({ amount: cumulativeAmount, sig });
       notification.success(`第 ${next} 次调用完成（离线签名，0 gas）`);
     } catch (e) {
-      console.error(e);
+      if (!isExpectedTransactionError(e)) console.error(e);
       notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
@@ -121,7 +126,7 @@ export const ChannelCard = () => {
       notification.success(`已结算 ${callCount} 次调用（链上交易 #2）`);
       await refetch();
     } catch (e) {
-      console.error(e);
+      if (!isExpectedTransactionError(e)) console.error(e);
       notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);

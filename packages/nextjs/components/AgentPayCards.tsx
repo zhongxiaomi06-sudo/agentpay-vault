@@ -5,7 +5,12 @@ import { formatEther, keccak256, parseEther, parseSignature, toBytes, zeroAddres
 import { useAccount, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { getFriendlyTransactionError, getReceiptEventArg, notification } from "~~/utils/scaffold-eth";
+import {
+  getFriendlyTransactionError,
+  getReceiptEventArg,
+  isExpectedTransactionError,
+  notification,
+} from "~~/utils/scaffold-eth";
 import { structAt } from "~~/utils/scaffold-eth/structAt";
 
 type StreamStruct = {
@@ -87,7 +92,7 @@ export const StreamCard = () => {
       notification.success(okMsg);
       await refetch();
     } catch (e) {
-      console.error(e);
+      if (!isExpectedTransactionError(e)) console.error(e);
       notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
@@ -226,7 +231,7 @@ export const PlanCard = () => {
       notification.success(okMsg);
       await Promise.all([refetchCredits(), refetchSeq(), refetchPending()]);
     } catch (e) {
-      console.error(e);
+      if (!isExpectedTransactionError(e)) console.error(e);
       notification.error(getFriendlyTransactionError(e));
     } finally {
       setBusy(false);
@@ -400,7 +405,7 @@ export const EscrowCard = () => {
       notification.success(okMsg);
       refetch();
     } catch (err) {
-      console.error(err);
+      if (!isExpectedTransactionError(err)) console.error(err);
       notification.error(getFriendlyTransactionError(err));
     } finally {
       setBusy(false);

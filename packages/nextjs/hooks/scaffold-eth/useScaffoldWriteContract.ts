@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { MutateOptions } from "@tanstack/react-query";
 import { Abi, ExtractAbiFunctionNames } from "abitype";
+import { formatEther, parseEther } from "viem";
 import { Config, UseWriteContractParameters, useAccount, useConfig, useWriteContract } from "wagmi";
-import { WriteContractErrorType, WriteContractReturnType } from "wagmi/actions";
+import { WriteContractErrorType, WriteContractReturnType, getBalance } from "wagmi/actions";
 import { WriteContractVariables } from "wagmi/query";
 import { useSelectedNetwork } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-eth";
@@ -71,7 +72,7 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
     }
   }, [configOrName]);
 
-  const { chain: accountChain } = useAccount();
+  const { address: accountAddress, chain: accountChain } = useAccount();
   const writeTx = useTransactor();
   const [isMining, setIsMining] = useState(false);
 
@@ -105,6 +106,10 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
       throw new Error(`Wallet is connected to the wrong network. Please switch to ${selectedNetwork.name}`);
     }
 
+    if (!accountAddress) {
+      throw new Error("请先连接钱包");
+    }
+
     try {
       setIsMining(true);
       const { blockConfirmations, onBlockConfirmation, ...mutateOptions } = options || {};
@@ -114,6 +119,22 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
         address: deployedContractData.address,
         ...variables,
       } as WriteContractVariables<Abi, string, any[], Config, number>;
+
+      // Wallet providers often surface an opaque "Signer had insufficient balance"
+      // before the transaction reaches the contract. Check once here so every payable
+      // demo action fails early with the exact current/required MON amounts.
+      const transferValue = typeof writeContractObject.value === "bigint" ? writeContractObject.value : 0n;
+      const gasReserve = parseEther("0.001");
+      const balance = await getBalance(wagmiConfig, {
+        address: accountAddress,
+        chainId: selectedNetwork.id,
+      });
+      const requiredBalance = transferValue + gasReserve;
+      if (balance.value < requiredBalance) {
+        throw new Error(
+          `钱包 MON 余额不足：当前 ${formatEther(balance.value)} MON，本次至少需要 ${formatEther(requiredBalance)} MON（含 Gas 预留）。请切换到已领取测试币的 Monad Testnet 钱包。`,
+        );
+      }
 
       if (!finalConfig?.disableSimulate) {
         await simulateContractWriteAndNotifyError({
