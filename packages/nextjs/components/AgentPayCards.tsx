@@ -6,6 +6,43 @@ import { useAccount, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
+import { structAt } from "~~/utils/scaffold-eth/structAt";
+
+type StreamStruct = {
+  payer: string;
+  payee: string;
+  deposit: bigint;
+  ratePerSecond: bigint;
+  start: bigint;
+  withdrawn: bigint;
+  active: boolean;
+};
+const STREAM_KEYS = ["payer", "payee", "deposit", "ratePerSecond", "start", "withdrawn", "active"] as const;
+
+type EscrowStruct = {
+  payer: string;
+  payee: string;
+  amount: bigint;
+  expectedHash: string;
+  deliveryHash: string;
+  deadline: bigint;
+  challengeDeadline: bigint;
+  challengePeriod: bigint;
+  status: number;
+  arbiter: string;
+};
+const ESCROW_KEYS = [
+  "payer",
+  "payee",
+  "amount",
+  "expectedHash",
+  "deliveryHash",
+  "deadline",
+  "challengeDeadline",
+  "challengePeriod",
+  "status",
+  "arbiter",
+] as const;
 
 /**
  * StreamCard —— 流支付金库：按秒流式付费，余额实时流动
@@ -35,18 +72,8 @@ export const StreamCard = () => {
 
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });
 
-  // viem 返回 struct 为带名字段对象；做一层防御性兼容
-  const s = streamRaw as unknown as
-    | {
-        payer: string;
-        payee: string;
-        deposit: bigint;
-        ratePerSecond: bigint;
-        start: bigint;
-        withdrawn: bigint;
-        active: boolean;
-      }
-    | undefined;
+  // viem 返回 struct 为位置数组，用 structAt 归一化
+  const s = structAt<StreamStruct>(streamRaw, STREAM_KEYS);
   const active = s?.active;
   const elapsed = s && nowSec > 0 ? Math.max(0, nowSec - Number(s.start)) : 0;
   const accrued = s ? BigInt(elapsed) * s.ratePerSecond : 0n;
@@ -329,20 +356,7 @@ export const EscrowCard = () => {
     args: [latestId],
   });
 
-  const e = escrowRaw as unknown as
-    | {
-        payer: string;
-        payee: string;
-        amount: bigint;
-        expectedHash: string;
-        deliveryHash: string;
-        deadline: bigint;
-        challengeDeadline: bigint;
-        challengePeriod: bigint;
-        status: number;
-        arbiter: string;
-      }
-    | undefined;
+  const e = structAt<EscrowStruct>(escrowRaw, ESCROW_KEYS);
   const STATUS = ["🔒 已锁定", "📦 已交付·争议窗口", "✅ 已释放/已取款", "↩️ 已退款", "⚖️ 争议 50/50"];
 
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "AgentPayVault" });

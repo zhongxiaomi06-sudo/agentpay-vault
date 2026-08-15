@@ -6,6 +6,17 @@ import { useAccount, useSignTypedData } from "wagmi";
 import { useDeployedContractInfo, useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
+import { structAt } from "~~/utils/scaffold-eth/structAt";
+
+type ChannelStruct = {
+  agent: string;
+  provider: string;
+  budget: bigint;
+  expiry: bigint;
+  settled: bigint;
+  closed: boolean;
+};
+const CHANNEL_KEYS = ["agent", "provider", "budget", "expiry", "settled", "closed"] as const;
 
 const PRICE_PER_CALL = parseEther("0.0001");
 
@@ -29,9 +40,7 @@ export const ChannelCard = () => {
     functionName: "channels",
     args: [channelId ?? ("0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`)],
   });
-  const ch = channelRaw as unknown as
-    | { agent: string; provider: string; budget: bigint; expiry: bigint; settled: bigint; closed: boolean }
-    | undefined;
+  const ch = structAt<ChannelStruct>(channelRaw, CHANNEL_KEYS);
 
   const { data: nonceData } = useScaffoldReadContract({ contractName: "ChannelVault", functionName: "channelNonce" });
   const { writeContractAsync } = useScaffoldWriteContract({ contractName: "ChannelVault" });
