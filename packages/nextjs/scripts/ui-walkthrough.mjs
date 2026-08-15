@@ -3,7 +3,7 @@
 // 截图输出到 /tmp/uitest/
 import { mkdirSync, readFileSync } from "fs";
 import { chromium } from "playwright-core";
-import { createPublicClient, createWalletClient, http, parseEther } from "viem";
+import { createPublicClient, createWalletClient, fallback, http, parseEther } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
 
@@ -19,6 +19,9 @@ const shot = n => page.screenshot({ path: `/tmp/uitest/${n}.png`, fullPage: true
 const log = t => console.log(`\x1b[36m▸ ${t}\x1b[0m`);
 const errors = [];
 page.on("pageerror", e => errors.push(e.message));
+page.on("console", message => {
+  if (message.type() === "error") errors.push(message.text());
+});
 
 log("打开 " + BASE);
 await page.goto(BASE, { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -76,11 +79,16 @@ if (burnerState.chainId !== 10143) {
 // 注资 3 MON（测试网）
 const env = readFileSync(new URL("../../hardhat/.env.agents", import.meta.url), "utf8");
 const demo = privateKeyToAccount(env.match(/DEMO_WALLET_PK=(0x[0-9a-fA-F]+)/)[1]);
-const pub = createPublicClient({ chain: monadTestnet, transport: http("https://testnet-rpc.monad.xyz") });
+const rpcTransport = fallback([
+  http("https://monad-testnet.drpc.org"),
+  http("https://rpc.ankr.com/monad_testnet"),
+  http("https://testnet-rpc.monad.xyz"),
+]);
+const pub = createPublicClient({ chain: monadTestnet, transport: rpcTransport });
 const wallet = createWalletClient({
   account: demo,
   chain: monadTestnet,
-  transport: http("https://testnet-rpc.monad.xyz"),
+  transport: rpcTransport,
 });
 const bal = await pub.getBalance({ address: burnerAddress });
 if (bal < parseEther("1")) {
@@ -94,15 +102,36 @@ await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForTimeout(9000);
 await shot("00-home-connected");
 
-const clickTx = async (name, waitMs = 12000) => {
+const clickTx = async (name, waitMs = 30000) => {
   const btn = page.getByRole("button", { name }).first();
   if (!(await btn.count())) {
     log(`⚠️ 找不到按钮「${name}」，跳过`);
     return false;
   }
-  await btn.click();
+  await btn.waitFor({ state: "visible" });
+  await btn.click({ timeout: 30000 });
   log(`点击「${name}」→ 等待确认…`);
-  await page.waitForTimeout(waitMs);
+  await page
+    .waitForFunction(
+      label =>
+        [...document.querySelectorAll("button")].some(node => node.textContent?.includes(label) && node.disabled),
+      name,
+      { timeout: 3000 },
+    )
+    .catch(() => undefined);
+  await page.waitForFunction(
+    label => {
+      const button = [...document.querySelectorAll("button")].find(node => node.textContent?.includes(label));
+      return !button || !button.disabled;
+    },
+    name,
+    { timeout: waitMs },
+  );
+  const body = await page.locator("body").innerText();
+  const failure = body.match(
+    /RPC 请求过快|余额不足|网络或 RPC 暂时不可用|交易失败|开通道失败|结算失败|交易已确认，但未找到|ContractFunctionExecutionError/,
+  );
+  if (failure) throw new Error(`点击「${name}」失败：${failure[0]}`);
   return true;
 };
 
@@ -117,10 +146,11 @@ await shot("03-stream-withdrawn");
 
 // ---- 按次 meter ----
 log("第二幕：meter 按次计量");
-await clickTx("挂单");
+await clickTx("挂单 0.0001 MON/次");
 await clickTx("订阅");
-await clickTx("调用付费 API", 15000);
-await clickTx("调用付费 API", 15000);
+await clickTx("签名并计量", 30000);
+await clickTx("签名并计量", 30000);
+await page.getByText(/付费数据：agent/).waitFor({ state: "visible", timeout: 10000 });
 await shot("04-meter");
 
 // ---- 通道 ----
@@ -158,6 +188,7 @@ await shot("06-channel-settled");
 // ---- 乐观托管 ----
 log("第四幕：乐观托管");
 await clickTx("锁定资金");
+await page.getByRole("button", { name: "服务商提交交付" }).waitFor({ state: "visible", timeout: 15000 });
 await clickTx("服务商提交交付");
 await shot("07-escrow-delivered");
 log("等待争议窗口 65 秒…");
@@ -174,7 +205,7 @@ await shot("09-p256");
 log("第六幕：/lens 并行动画");
 await page.goto(BASE + "/lens", { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(6000);
-await clickTx("并行执行这一批交易", 4000);
+await clickTx("并行执行这一批交易", 10000);
 await shot("10-lens-parallel");
 await page.waitForTimeout(6000);
 await shot("11-lens-final");

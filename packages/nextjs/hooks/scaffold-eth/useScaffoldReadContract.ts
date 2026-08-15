@@ -39,8 +39,9 @@ export const useScaffoldReadContract = <
   });
 
   const { query: queryOptions, watch, ...readContractConfig } = readConfig;
-  // set watch to true by default
-  const defaultWatch = watch ?? true;
+  // Reads are stable by default. Components that need live data opt in with watch: true.
+  // This prevents every card from invalidating every contract query on each block.
+  const defaultWatch = watch ?? false;
 
   const readContractHookRes = useReadContract({
     chainId: selectedNetwork.id,
