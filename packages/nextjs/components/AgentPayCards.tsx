@@ -95,7 +95,8 @@ export const StreamCard = () => {
   };
 
   return (
-    <div className="card bg-base-200 border border-primary/30">
+    <div className="card relative">
+      <span className="absolute right-5 top-5 size-2.5 rounded-full bg-primary" />
       <div className="card-body gap-3">
         <h2 className="card-title">🌊 流支付金库</h2>
         <p className="text-xs text-base-content/60 -mt-2">agent 预付押金，按秒流式付费给服务商，随用随取</p>
@@ -260,7 +261,8 @@ export const PlanCard = () => {
     }, "402 → 签名授权 → meter() 记账成功，数据已返回");
 
   return (
-    <div className="card bg-base-200 border border-secondary/30">
+    <div className="card relative">
+      <span className="absolute right-5 top-5 size-2.5 rounded-full bg-info" />
       <div className="card-body gap-3">
         <h2 className="card-title">🎫 按次付费订阅</h2>
         <p className="text-xs text-base-content/60 -mt-2">
@@ -384,7 +386,8 @@ export const EscrowCard = () => {
     e && e.status === 1 && e.challengeDeadline > 0n && nowSec > 0 && BigInt(nowSec) <= e.challengeDeadline;
 
   return (
-    <div className="card bg-base-200 border border-accent/30">
+    <div className="card relative">
+      <span className="absolute right-5 top-5 size-2.5 rounded-full bg-accent" />
       <div className="card-body gap-3">
         <h2 className="card-title">🤝 乐观托管 Escrow</h2>
         <p className="text-xs text-base-content/60 -mt-2">

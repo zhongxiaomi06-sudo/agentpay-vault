@@ -56,7 +56,9 @@ const ParallelLens: NextPage = () => {
     <div className="flex flex-col grow items-center px-4 py-8 gap-6 max-w-5xl mx-auto w-full">
       {/* 标题区 */}
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-1">🔬 ParallelLens</h1>
+        <h1 className="text-4xl font-bold mb-2">
+          🔬 Parallel<span className="ink-accent">Lens</span>
+        </h1>
         <p className="text-base-content/70">Monad 乐观并行执行 · 状态冲突 · 覆盖重执行 —— 一目了然</p>
       </div>
 

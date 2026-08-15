@@ -130,7 +130,8 @@ export const ChannelCard = () => {
   };
 
   return (
-    <div className="card bg-base-200 border border-warning/30">
+    <div className="card relative">
+      <span className="absolute right-5 top-5 size-2.5 rounded-full bg-secondary" />
       <div className="card-body gap-3">
         <h2 className="card-title">🎟️ 按次计量通道</h2>
         <p className="text-xs text-base-content/60 -mt-2">
