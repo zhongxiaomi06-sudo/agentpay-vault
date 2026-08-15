@@ -28,7 +28,6 @@ export const LivePanel = () => {
     contractName: "ConflictLab",
     eventName: "Bumped",
     watch: true,
-    fromBlock: 0n,
     // Monad RPC 的 eth_getLogs 限 100 块窗口，批次必须小于它
     blocksBatchSize: 99,
   });

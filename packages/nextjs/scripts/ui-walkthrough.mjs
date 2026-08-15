@@ -49,14 +49,14 @@ for (let i = 0; i < 20 && !burnerState.address; i++) {
     const pk = localStorage.getItem("burnerWallet.pk");
     if (pk) return { address: pk, chainId: 10143, isPk: true };
     return (() => {
-  const store = JSON.parse(localStorage.getItem("wagmi.store") ?? "{}");
-  const conns = store?.state?.connections;
-  if (conns?.__type === "Map") {
-    const first = conns.value?.[0]?.[1];
-    return { address: first?.accounts?.[0] ?? null, chainId: first?.chainId ?? store?.state?.chainId };
-  }
-    return { address: null, chainId: null };
-  })();
+      const store = JSON.parse(localStorage.getItem("wagmi.store") ?? "{}");
+      const conns = store?.state?.connections;
+      if (conns?.__type === "Map") {
+        const first = conns.value?.[0]?.[1];
+        return { address: first?.accounts?.[0] ?? null, chainId: first?.chainId ?? store?.state?.chainId };
+      }
+      return { address: null, chainId: null };
+    })();
   });
   if (!burnerState.address) await page.waitForTimeout(500);
 }
